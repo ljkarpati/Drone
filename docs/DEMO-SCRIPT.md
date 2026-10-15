@@ -40,16 +40,14 @@ Set both gauges to **Flooding**. Scroll back up.
 > in Meyerland, so instead of a circle around each gauge, the app marks the stretch of bayou each
 > one is responsible for."
 
-**[1:05] Get Me Out.** Tap **Get Me Out**, type a south-side address (or **Use demo start**).
+**[1:05] Get Me Out.** Tap the **Get Me Out** bar at the bottom. That's the only tap.
 
-> "I live south of the bayou. The app knows that, so it doesn't send me across a bridge. Those
-> are the first places to flood. It recommends higher ground on my side. This one is 65 feet up;
-> Meyerland is about 55."
+> "When you're panicking, you shouldn't fill in a form. One tap finds me, sees that I'm south of
+> the bayou, and sends me to higher ground on my side instead of across a bridge, which is the first
+> place to flood. It avoids every danger zone, and the app double-checks the route every 20 meters.
+> If there were no safe way out, it would say so and tell me to stay put and call 911."
 
-Tap the **Best** destination, then **Find a safe route**.
-
-> "The route avoids every danger zone, and the app double-checks it every 20 meters. If there were
-> no safe way out, it would say so and tell me to stay put and call 911."
+(Away from Houston, the same tap runs a demo from Meyerland.)
 
 **[1:35] Proof and honesty.**
 

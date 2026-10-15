@@ -124,8 +124,10 @@ that every point of the bayou in a gauge's reach is covered with no gaps.
 
 ## 5. From danger zones to a route
 
-When you tap **Get Me Out**, you pick a start (your location, an address, or the demo start)
-and a destination.
+When you tap **Get Me Out** (pinned to the bottom of the screen), the app does everything by
+itself: it finds you, picks the best destination on your side of the bayou, and plans the route.
+If that destination has no safe route, it tries the next one. "Change start or destination" lets
+you pick by hand (your location, an address, or the demo start).
 
 **Which way is "out"?** The app works out which side of Brays Bayou you're on (`braysSide()` in
 `src/lib/sides.ts`: it finds the closest piece of the bayou and checks whether you're to its left

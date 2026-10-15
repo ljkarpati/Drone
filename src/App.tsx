@@ -6,11 +6,6 @@ import { Link, usePath } from "./router";
 // The About page loads only when you open it, so the main screen opens faster.
 const About = lazy(() => import("./components/About").then((m) => ({ default: m.About })));
 
-const PAGES = [
-  { href: "/", label: "Live" },
-  { href: "/about", label: "About" },
-];
-
 export function App() {
   const path = usePath();
   const page =
@@ -23,20 +18,19 @@ export function App() {
       </a>
       <header className="site-header">
         <Link href="/" className="brand" aria-label="TurnAround home">
-          <Logo size={36} />
+          <Logo size={32} />
           <span className="brand-name">TurnAround</span>
         </Link>
         <nav aria-label="Pages">
-          {PAGES.map((p) => (
-            <Link
-              key={p.href}
-              href={p.href}
-              className="nav-link"
-              aria-current={path === p.href ? "page" : undefined}
-            >
-              {p.label}
+          {path === "/about" ? (
+            <Link href="/" className="nav-link">
+              Live
             </Link>
-          ))}
+          ) : (
+            <Link href="/about" className="nav-link">
+              About
+            </Link>
+          )}
         </nav>
       </header>
       <main id="main" className="page">

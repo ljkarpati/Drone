@@ -17,7 +17,7 @@ export function RainOutlook({ rain }: { rain: RainState }) {
   return (
     <section className="rain" aria-labelledby="rain-title">
       <h2 id="rain-title" className="section-title">
-        Rain outlook
+        Rain
       </h2>
       {!outlook && loading && <p className="widget fine">Loading the forecast…</p>}
       {!outlook && !loading && error && (
@@ -27,37 +27,33 @@ export function RainOutlook({ rain }: { rain: RainState }) {
         </p>
       )}
       {outlook && (
-        <>
-          <div className="widget-grid">
-            <div className="widget">
-              <p className="widget-title">Next 24 hours</p>
-              <p className="metric">
-                {inches(outlook.next24hInches)}
-                <span className="metric-unit">in</span>
-              </p>
-              <p className="widget-foot">{outlook.chance24hPct}% chance of rain</p>
-            </div>
-            <div className="widget">
-              <p className="widget-title">Next 3 days</p>
-              <p className="metric">
-                {inches(outlook.next3dInches)}
-                <span className="metric-unit">in</span>
-              </p>
-              <p className="widget-foot">{outlook.chance3dPct}% chance of rain</p>
-            </div>
-          </div>
-          {outlook.next24hInches >= HEAVY_RAIN_IN && (
-            <p className="callout">
-              Heavy rain expected. Brays Bayou can rise fast: in Harvey it climbed more than 12 feet
-              in one hour at S Main St. Check back often.
+        <div className="rain-row">
+          <div>
+            <p className="metric metric-sm">
+              {inches(outlook.next24hInches)}
+              <span className="metric-unit">in</span>
             </p>
-          )}
-          <p className="fine section-foot">
-            National Weather Service forecast for Meyerland
-            {savedAt ? `, checked ${formatClock(savedAt)}` : ""}
-            {error ? " (couldn't refresh; showing the last forecast)" : ""}.
-          </p>
-        </>
+            <p className="widget-foot">next 24 hours · {outlook.chance24hPct}% chance</p>
+          </div>
+          <div>
+            <p className="metric metric-sm">
+              {inches(outlook.next3dInches)}
+              <span className="metric-unit">in</span>
+            </p>
+            <p className="widget-foot">next 3 days · {outlook.chance3dPct}% chance</p>
+          </div>
+        </div>
+      )}
+      {outlook && outlook.next24hInches >= HEAVY_RAIN_IN && (
+        <p className="callout">
+          Heavy rain expected. Brays Bayou can rise more than 12 feet in an hour. Check back often.
+        </p>
+      )}
+      {outlook && (
+        <p className="fine section-foot">
+          National Weather Service{savedAt ? `, ${formatClock(savedAt)}` : ""}
+          {error ? " (last saved forecast)" : ""}
+        </p>
       )}
     </section>
   );

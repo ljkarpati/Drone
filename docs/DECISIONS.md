@@ -180,7 +180,19 @@ checkable with `npm test`.
 flood stage (30 minutes at Gessner, 2.5 hours at S Main), and from the first alert anywhere to each
 gauge flooding (3.5 hours at S Main). Both are true, and the short one is shown honestly.
 
-**36b. Apple-style design.** Widgets on a grouped gray background, a frosted header with a
+**36a. One tap, not a form** (changed after testing on an iPhone). People who are panicking
+shouldn't fill in a form. Get Me Out is pinned to the bottom of the screen. One tap finds you,
+picks the best destination on your side of the bayou, and plans the route. If that destination
+has no safe route, it tries the next one by itself. If location is off or fails, the address form
+opens with instructions. Outside Houston, it runs a demo from Meyerland. If the phone already
+allowed location, the app finds you in the background as soon as the page opens. iPhone always
+asks permission the first time, so zero taps isn't possible.
+
+**36b. Design: avoiding the "AI-generated" look.** Common advice (identical rounded cards, one
+corner radius everywhere, stock fonts, too much text) led to: a full-width colored status band
+like a road sign, an edge-to-edge map, corner sizes that shrink with element size, the iPhone's
+built-in rounded font for numbers and headlines (no download), no drop shadows, rain as one row
+instead of more cards, and far less explanatory text (it lives on the About page). Earlier: Widgets on a grouped gray background, a frosted header with a
 segmented control, and the phone's own system font (San Francisco on iPhone), so nothing extra
 downloads. No decorative animation: the only motion is a slight press effect on buttons. Every
 gray text color was checked for at least 4.5 : 1 contrast in light and dark mode.

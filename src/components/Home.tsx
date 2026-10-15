@@ -1,9 +1,10 @@
 // The main screen: status, Get Me Out, map, gauges, rain.
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GAUGES } from "../data/gauges";
 import { testModeAllowed, useLiveGauges, useNow, useRainOutlook } from "../hooks";
 import { formatClock } from "../lib/format";
+import { prefetchLocation } from "../lib/locate";
 import { riskZones } from "../lib/risk";
 import type { Place, RouteOutcome } from "../lib/routing";
 import { gaugeStatusesAt, levelsKey, readingsById } from "../lib/status";
@@ -22,9 +23,14 @@ export function Home() {
   const rain = useRainOutlook();
   const now = useNow();
   const [overrides, setOverrides] = useState<Record<string, Override>>({});
-  const [routeOpen, setRouteOpen] = useState(false);
+  const [runId, setRunId] = useState(0);
+  const [busy, setBusy] = useState(false);
   const [routeState, setRouteState] = useState<RouteState>({ start: null, end: null, outcome: null });
-  const panelRef = useRef<HTMLDivElement>(null);
+
+  // If this phone already allowed location, start finding it now so Get Me Out is instant.
+  useEffect(() => {
+    prefetchLocation();
+  }, []);
 
   const testMode = testModeAllowed();
   const testing = testMode && Object.values(overrides).some((o) => o !== "live");
@@ -39,28 +45,17 @@ export function Home() {
   const hasAnyReading = statuses.some((s) => s.reading);
   const route = routeState.outcome?.kind === "ok" ? routeState.outcome.route.coords : null;
 
-  function openRoutePanel() {
-    setRouteOpen(true);
-    requestAnimationFrame(() => panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-  }
-
   return (
     <>
       {testing && (
         <p className="test-banner" role="note">
-          TEST MODE: these readings are pretend, not real.
+          Test mode: these readings are pretend.
         </p>
       )}
       <StatusBanner statuses={statuses} loading={live.loading && !hasAnyReading} />
       <DataNotice live={live} />
 
-      <button type="button" className="get-me-out" onClick={openRoutePanel} aria-expanded={routeOpen}>
-        Get Me Out
-      </button>
-
-      <div ref={panelRef}>
-        {routeOpen && <RoutePanel zones={zones} onChange={setRouteState} />}
-      </div>
+      <RoutePanel zones={zones} runId={runId} onChange={setRouteState} onBusyChange={setBusy} />
 
       <MapView
         statuses={statuses}
@@ -72,7 +67,7 @@ export function Home() {
 
       <section aria-labelledby="gauges-title">
         <h2 id="gauges-title" className="section-title">
-          Brays Bayou gauges
+          Brays Bayou
         </h2>
         <div className="gauge-grid">
           {statuses.map((s) => (
@@ -84,6 +79,18 @@ export function Home() {
       <RainOutlook rain={rain} />
 
       {testMode && <TestModePanel gauges={GAUGES} overrides={overrides} onChange={setOverrides} />}
+
+      {/* Always within thumb reach, however far down you've scrolled. */}
+      <div className="action-bar">
+        <button
+          type="button"
+          className="get-me-out"
+          disabled={busy}
+          onClick={() => setRunId((n) => n + 1)}
+        >
+          {busy ? "Working on it…" : "Get Me Out"}
+        </button>
+      </div>
     </>
   );
 }

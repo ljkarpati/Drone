@@ -5,13 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>TurnAround</title>
     <meta name="description" content="Get out of Meyerland without driving into water. Live Brays Bayou levels and flood-safe routing." />
-    <meta name="theme-color" content="#0B2545" />
+    <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
     <meta name="color-scheme" content="light dark" />
+    <!-- Start connecting to the map and NOAA servers right away, before the app asks. -->
+    <link rel="preconnect" href="https://tile.openstreetmap.org" crossorigin />
+    <link rel="preconnect" href="https://api.weather.gov" crossorigin />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="TurnAround" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   </head>
   <body>
     <div id="root"></div>

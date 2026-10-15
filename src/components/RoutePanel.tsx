@@ -1,295 +1,316 @@
-// "Get Me Out": pick where you are and where you want to go, and get a route that stays
-// out of the danger zones.
+// "Get Me Out". One tap does everything: find you, pick the best place to go on your side of
+// the bayou, and plan a route around the water. People who want to choose (helping a relative,
+// or a demo) can open "Change start or destination".
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { formatDriveTime, formatMiles } from "../lib/format";
+import { locate } from "../lib/locate";
 import type { RiskZones } from "../lib/risk";
 import {
   appleMapsUrl,
   DEMO_START,
+  destinationsFor,
   geocode,
   googleMapsUrl,
-  destinationsFor,
   inHouston,
   requestRoute,
   type Destination,
   type Place,
   type RouteOutcome,
 } from "../lib/routing";
+import { braysSide } from "../lib/sides";
+
+type RouteState = { start: Place | null; end: Place | null; outcome: RouteOutcome | null };
 
 type Props = {
   zones: RiskZones;
-  onChange: (state: { start: Place | null; end: Place | null; outcome: RouteOutcome | null }) => void;
+  runId: number; // goes up by one every time someone taps Get Me Out
+  onChange: (state: RouteState) => void;
+  onBusyChange?: (busy: boolean) => void;
 };
 
-export function RoutePanel({ zones, onChange }: Props) {
+type Stage = "idle" | "locating" | "routing" | "done";
+
+const LOCATION_PROBLEM: Record<string, string> = {
+  denied:
+    "Location is off for this site. Turn it on in Settings › Privacy & Security › Location Services › Safari Websites, or type your address below.",
+  unavailable: "Couldn't find your location. Type your address below.",
+  unsupported: "This browser can't share your location. Type your address below.",
+};
+
+export function RoutePanel({ zones, runId, onChange, onBusyChange }: Props) {
   const [start, setStart] = useState<Place | null>(null);
   const [end, setEnd] = useState<Place | null>(null);
   const [endChoice, setEndChoice] = useState<string | null>(null);
-  const [locating, setLocating] = useState(false);
-  const [startMessage, setStartMessage] = useState<string | null>(null);
-  const [routing, setRouting] = useState(false);
   const [outcome, setOutcome] = useState<RouteOutcome | null>(null);
-  const resultRef = useRef<HTMLDivElement>(null);
-  const dests = destinationsFor(start);
+  const [stage, setStage] = useState<Stage>("idle");
+  const [message, setMessage] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const ref = useRef<HTMLElement>(null);
+  const zonesRef = useRef(zones);
+  zonesRef.current = zones;
 
-  // Tell the page (and the map) whenever something changes.
   useEffect(() => onChange({ start, end, outcome }), [start, end, outcome, onChange]);
+  useEffect(() => onBusyChange?.(stage === "locating" || stage === "routing"), [stage, onBusyChange]);
 
-  // A route belongs to the zones it was planned with. If the zones change, it's out of date.
-  useEffect(() => setOutcome(null), [zones]);
+  const show = () =>
+    requestAnimationFrame(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
 
-  function pickStart(place: Place) {
-    setStart(place);
+  const plan = useCallback(async (from: Place, to: Place) => {
+    setStage("routing");
+    const result = await requestRoute(from, to, zonesRef.current);
+    setOutcome(result);
+    setStage("done");
+    return result;
+  }, []);
+
+  // The one-tap flow.
+  const autoRun = useCallback(async () => {
+    setEditing(false);
     setOutcome(null);
-    // A destination picked for the other side of the bayou may no longer be a good idea.
-    if (endChoice && endChoice !== "other") {
-      setEnd(null);
-      setEndChoice(null);
-    }
-  }
+    setMessage(null);
+    setStage("locating");
+    show();
 
-  function pickEnd(place: Place, choice: string) {
-    setEnd(place);
-    setEndChoice(choice);
-    setOutcome(null);
-  }
-
-  function useMyLocation() {
-    if (!("geolocation" in navigator)) {
-      setStartMessage("This browser can't share your location. Type your address instead.");
+    let here: Place;
+    try {
+      here = await locate();
+    } catch (err) {
+      setStage("idle");
+      setMessage(LOCATION_PROBLEM[(err as Error).message] ?? LOCATION_PROBLEM.unavailable);
+      setEditing(true);
       return;
     }
-    setLocating(true);
-    setStartMessage(null);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocating(false);
-        const here = { label: "My location", lon: pos.coords.longitude, lat: pos.coords.latitude };
-        if (!inHouston(here)) {
-          setStartMessage(
-            "You seem to be outside Houston. TurnAround only plans routes around Meyerland. Type a Houston address, or use the demo start.",
-          );
-          return;
-        }
-        pickStart(here);
-      },
-      (err) => {
-        setLocating(false);
-        setStartMessage(
-          err.code === err.PERMISSION_DENIED
-            ? "Location is turned off for this site. Type your address instead."
-            : "Couldn't find your location. Type your address instead.",
-        );
-      },
-      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
-    );
-  }
+    if (!inHouston(here)) {
+      here = DEMO_START;
+      setMessage("You're outside Houston, so this is a demo starting in Meyerland.");
+    }
+    setStart(here);
 
-  async function findRoute() {
-    if (!start || !end) return;
-    setRouting(true);
-    setOutcome(null);
-    const result = await requestRoute(start, end, zones);
-    setRouting(false);
-    setOutcome(result);
-    // Bring the result (and the map just below it) into view.
-    requestAnimationFrame(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
-  }
+    // Best destinations first. If the zones block one completely, try the next.
+    const { recommended, across } = destinationsFor(here);
+    let last: RouteOutcome | null = null;
+    for (const d of [...recommended, ...across]) {
+      setEnd(d);
+      setEndChoice(d.id);
+      last = await plan(here, d);
+      if (last.kind !== "noRoute") break;
+    }
+    show();
+  }, [plan]);
+
+  useEffect(() => {
+    if (runId > 0) autoRun();
+  }, [runId, autoRun]);
+
+  // If the water changes while a route is showing, plan it again with the new zones.
+  useEffect(() => {
+    if (start && end && stage === "done") plan(start, end);
+    // (Deliberately runs only when the zones change, not when start or end change.)
+  }, [zones]);
+
+  const busy = stage === "locating" || stage === "routing";
+  const dests = destinationsFor(start);
 
   return (
-    <section className="card route-panel" aria-labelledby="route-title">
-      <h2 id="route-title">Get Me Out</h2>
+    <section ref={ref} className="trip" aria-live="polite" aria-busy={busy}>
+      {busy && (
+        <p className="trip-progress">
+          <span className="spinner" aria-hidden="true" />
+          {stage === "locating" ? "Finding you…" : "Planning a way around the water…"}
+        </p>
+      )}
+      {message && <p className="trip-message">{message}</p>}
+      {stage === "done" && outcome && <TripResult outcome={outcome} start={start} end={end} />}
 
-      <fieldset>
-        <legend>From</legend>
-        <button type="button" className="btn btn-secondary" onClick={useMyLocation} disabled={locating}>
-          {locating ? "Finding you…" : "Use my location"}
+      {!busy && (
+        <button type="button" className="btn-link trip-change" onClick={() => setEditing(!editing)}>
+          {editing
+            ? "Hide"
+            : stage === "idle" && !message
+              ? "Or plan a trip from an address"
+              : "Change start or destination"}
         </button>
-        <AddressSearch label="Or type a starting address" onPick={pickStart} />
-        <button type="button" className="btn-link" onClick={() => pickStart(DEMO_START)}>
-          Use demo start: Rutherglenn Dr, Meyerland
-        </button>
-        {startMessage && <p className="form-message">{startMessage}</p>}
-        {start && (
-          <p className="chosen">
-            <span className="chosen-tag">Start</span> {start.label}
-          </p>
-        )}
-      </fieldset>
+      )}
 
-      <fieldset>
-        <legend>To</legend>
-        {!dests.side && (
-          <p className="fine">Pick a start first and we'll show which way leads away from the bayou.</p>
-        )}
-        {dests.side && (
-          <p className="side-note">
-            You're on the <strong>{dests.side} side</strong> of Brays Bayou. These keep you on your
-            side, away from the water:
-          </p>
-        )}
-        <div className="choices">
-          {dests.recommended.map((d, i) => (
-            <DestinationButton
-              key={d.id}
-              d={d}
-              best={Boolean(dests.side) && i === 0}
-              pressed={endChoice === d.id}
-              onPick={() => pickEnd(d, d.id)}
+      {editing && (
+        <div className="manual">
+          <fieldset>
+            <legend>From</legend>
+            <button type="button" className="btn btn-secondary" onClick={autoRun}>
+              Use my location
+            </button>
+            <AddressSearch
+              label="Or type an address"
+              onPick={(p) => {
+                setStart(p);
+                setOutcome(null);
+                if (endChoice !== "other") {
+                  setEnd(null);
+                  setEndChoice(null);
+                }
+              }}
             />
-          ))}
-        </div>
-        {dests.across.length > 0 && (
-          <>
-            <p className="side-note">
-              <strong>Across Brays Bayou</strong>: only if you must. The crossings are the first
-              places to flood.
-            </p>
+            <button type="button" className="btn-link" onClick={() => setStart(DEMO_START)}>
+              Use demo start (Rutherglenn Dr)
+            </button>
+            {start && <p className="chosen">From {start.label}</p>}
+          </fieldset>
+
+          <fieldset>
+            <legend>To</legend>
+            {dests.side && <p className="fine">You're on the {dests.side} side of Brays Bayou.</p>}
             <div className="choices">
-              {dests.across.map((d) => (
+              {dests.recommended.map((d, i) => (
                 <DestinationButton
                   key={d.id}
                   d={d}
-                  best={false}
+                  best={Boolean(dests.side) && i === 0}
                   pressed={endChoice === d.id}
-                  onPick={() => pickEnd(d, d.id)}
+                  onPick={() => {
+                    setEnd(d);
+                    setEndChoice(d.id);
+                  }}
                 />
               ))}
             </div>
-          </>
-        )}
-        <div className="choices">
+            {dests.across.length > 0 && (
+              <>
+                <p className="fine">Across Brays Bayou (crossings flood first):</p>
+                <div className="choices">
+                  {dests.across.map((d) => (
+                    <DestinationButton
+                      key={d.id}
+                      d={d}
+                      best={false}
+                      pressed={endChoice === d.id}
+                      onPick={() => {
+                        setEnd(d);
+                        setEndChoice(d.id);
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+            <button
+              type="button"
+              className="choice"
+              aria-pressed={endChoice === "other"}
+              onClick={() => {
+                setEndChoice("other");
+                setEnd(null);
+              }}
+            >
+              <span>Somewhere else</span>
+            </button>
+            {endChoice === "other" && (
+              <AddressSearch label="Destination" onPick={(p) => setEnd(p)} autoFocus />
+            )}
+          </fieldset>
+
           <button
             type="button"
-            className="choice"
-            aria-pressed={endChoice === "other"}
-            onClick={() => {
-              setEndChoice("other");
-              setEnd(null);
-              setOutcome(null);
+            className="btn btn-primary btn-big"
+            disabled={!start || !end || busy}
+            onClick={async () => {
+              if (!start || !end) return;
+              setMessage(null);
+              setEditing(false);
+              await plan(start, end);
+              show();
             }}
           >
-            <span>Somewhere else</span>
-            <small>Type an address</small>
+            Plan this route
           </button>
         </div>
-        {endChoice === "other" && (
-          <AddressSearch label="Destination address" onPick={(p) => pickEnd(p, "other")} autoFocus />
-        )}
-        {end && (
-          <p className="chosen">
-            <span className="chosen-tag">End</span> {end.label}
-          </p>
-        )}
-      </fieldset>
-
-      <button
-        type="button"
-        className="btn btn-primary btn-big"
-        disabled={!start || !end || routing}
-        onClick={findRoute}
-      >
-        {routing ? "Finding a safe route…" : "Find a safe route"}
-      </button>
-      {(!start || !end) && <p className="fine">Choose a start and a destination first.</p>}
-
-      <div ref={resultRef} aria-live="polite">
-        {outcome && <RouteResultView outcome={outcome} />}
-      </div>
+      )}
     </section>
   );
 }
 
-function RouteResultView({ outcome }: { outcome: RouteOutcome }) {
+function TripResult({
+  outcome,
+  start,
+  end,
+}: {
+  outcome: RouteOutcome;
+  start: Place | null;
+  end: Place | null;
+}) {
   if (outcome.kind === "noRoute") {
     return (
-      <div className="route-result route-none">
-        <p className="route-headline">{outcome.message}</p>
-        <a className="btn btn-danger" href="tel:911">
+      <div className="trip-result trip-none">
+        <p className="trip-dest">No safe route out.</p>
+        <p>Every way out goes through flooded areas. Stay where you are and call 911 if you are in danger.</p>
+        <a className="btn btn-danger btn-big" href="tel:911">
           Call 911
         </a>
       </div>
     );
   }
   if (outcome.kind === "error") {
-    return (
-      <div className="route-result route-error">
-        <p>{outcome.message}</p>
-      </div>
-    );
+    return <p className="trip-message">{outcome.message}</p>;
   }
 
   const r = outcome.route;
-  const areas = r.avoidedAreas;
+  const destination = end && "detail" in end ? (end as Destination).detail : end?.label;
+  const side = start ? braysSide([start.lon, start.lat]) : null;
+  const facts: { text: string; warn?: boolean }[] = [];
+  if (r.startInZone.length > 0) {
+    facts.push({ text: "You're starting in a risk area. Drive slowly, away from the bayou.", warn: true });
+  }
+  if (r.braysCrossings.length > 0) {
+    facts.push({
+      text: `Crosses Brays Bayou at ${r.braysCrossings.join(" and ")}${r.avoidedAreas > 0 ? ", outside the flooded stretch" : ""}.`,
+      warn: r.avoidedAreas > 0,
+    });
+  } else if (side) {
+    facts.push({ text: `Stays on the ${side} side of Brays Bayou.` });
+  }
+  if (r.crossesWillowWaterhole) {
+    facts.push({ text: "Crosses Willow Waterhole Bayou, which has no gauge. Watch for water.", warn: true });
+  }
+  if (r.endInZone.length > 0) {
+    facts.push({ text: "Your destination is near a risk area. Pick one farther away if you can.", warn: true });
+  }
+  if (r.crossesZone) {
+    facts.push({ text: "Part of this route touches a risk area. Use extreme caution.", warn: true });
+  }
+
   return (
-    <div className="route-result route-ok">
-      <div className="widget-grid widget-grid-3">
-        <div className="widget widget-compact">
-          <p className="widget-title">Drive</p>
-          <p className="metric metric-sm">{formatDriveTime(r.durationS)}</p>
-        </div>
-        <div className="widget widget-compact">
-          <p className="widget-title">Distance</p>
-          <p className="metric metric-sm">{formatMiles(r.distanceM)}</p>
-        </div>
-        <div className="widget widget-compact">
-          <p className="widget-title">Avoided</p>
-          <p className="metric metric-sm">
-            {areas}
-            <span className="metric-unit">{areas === 1 ? "area" : "areas"}</span>
-          </p>
-        </div>
-      </div>
-      <p>
-        {areas === 0
-          ? "No flood-risk areas on the map right now. This is the normal fastest route."
-          : `This route avoids ${areas} flood-risk ${areas === 1 ? "area" : "areas"}.`}
-        {r.roads.length > 0 && ` Main roads: ${r.roads.join(", ")}.`}
+    <div className="trip-result">
+      <p className="trip-eyebrow">Head to</p>
+      <p className="trip-dest">{destination}</p>
+      <p className="trip-meta">
+        <strong>{formatDriveTime(r.durationS)}</strong>
+        <span>{formatMiles(r.distanceM)}</span>
+        <span>
+          {r.avoidedAreas === 0
+            ? "no flooding on the map"
+            : `avoids ${r.avoidedAreas} flood ${r.avoidedAreas === 1 ? "area" : "areas"}`}
+        </span>
       </p>
-      {r.startInZone.length > 0 && (
-        <p className="callout">
-          You are starting in or right next to the {r.startInZone.join(" and ")} risk{" "}
-          {r.startInZone.length === 1 ? "area" : "areas"}. Drive slowly, away from the bayou, and
-          turn around if you see water on the road.
-        </p>
+      {r.roads.length > 0 && <p className="trip-via">via {r.roads.slice(0, 2).join(" and ")}</p>}
+      {facts.length > 0 && (
+        <ul className="trip-facts">
+          {facts.map((f) => (
+            <li key={f.text} className={f.warn ? "is-warn" : undefined}>
+              {f.text}
+            </li>
+          ))}
+        </ul>
       )}
-      {r.endInZone.length > 0 && (
-        <p className="callout">
-          Your destination is in or next to the {r.endInZone.join(" and ")} risk{" "}
-          {r.endInZone.length === 1 ? "area" : "areas"}. Pick a place
-          farther from the bayou if you can.
-        </p>
-      )}
-      {r.braysCrossings.length > 0 && (
-        <p className={areas > 0 ? "callout" : undefined}>
-          This route crosses Brays Bayou at {r.braysCrossings.join(" and ")}
-          {areas > 0 ? ", outside the danger zones. Look before you cross." : "."}
-        </p>
-      )}
-      {r.crossesWillowWaterhole && (
-        <p className="callout">
-          This route crosses Willow Waterhole Bayou. It has no official gauge, so TurnAround can't
-          tell if it's flooding. Watch for water there.
-        </p>
-      )}
-      {r.crossesZone && (
-        <p className="callout callout-danger">
-          Warning: part of this route touches a risk area. Use extreme caution.
-        </p>
-      )}
-      <div className="route-actions">
-        <a className="btn btn-secondary" href={googleMapsUrl(r.coords)} target="_blank" rel="noreferrer">
-          Open in Google Maps
+      <div className="trip-actions">
+        <a className="btn btn-primary" href={googleMapsUrl(r.coords)} target="_blank" rel="noreferrer">
+          Google Maps
         </a>
         <a className="btn btn-secondary" href={appleMapsUrl(r.coords)} target="_blank" rel="noreferrer">
-          Open in Apple Maps
+          Apple Maps
         </a>
       </div>
       <p className="fine">
-        Google and Apple don't know about flooding. Google gets 3 stops along this route; Apple
-        only gets the start and end and may pick other roads. Compare with this map before you
-        go. Never drive into water: turn around, don't drown.
+        Apple Maps may choose other roads; Google follows this route. Never drive into water.
       </p>
     </div>
   );
@@ -309,11 +330,11 @@ function DestinationButton({
   return (
     <button type="button" className="choice" aria-pressed={pressed} onClick={onPick}>
       <span>
-        {d.label}
+        {d.detail}
         {best && <span className="best-tag">Best</span>}
       </span>
       <small>
-        {d.detail} · ground {d.groundFt} ft
+        {d.label} · {d.groundFt} ft up
       </small>
     </button>
   );
@@ -344,7 +365,7 @@ function AddressSearch({
     try {
       const found = await geocode(query.trim());
       setResults(found);
-      if (found.length === 0) setMessage("No Houston-area matches. Try adding a street number.");
+      if (found.length === 0) setMessage("No Houston-area matches. Try adding a house number.");
     } catch (err) {
       setResults(null);
       setMessage(err instanceof Error ? err.message : "Address search failed.");
@@ -362,7 +383,7 @@ function AddressSearch({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="e.g. 4800 Braeswood Blvd"
+            placeholder="4800 Braeswood Blvd"
             autoComplete="street-address"
             enterKeyHint="search"
             autoFocus={autoFocus}
