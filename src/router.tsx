@@ -1,4 +1,4 @@
-// A tiny router: the app only has three pages (/, /harvey, /about), so instead of adding a
+// A tiny router: the app only has two pages (/ and /about), so instead of adding a
 // routing library we read the address bar ourselves and listen for the Back button.
 
 import { useEffect, useState, type AnchorHTMLAttributes, type MouseEvent } from "react";

@@ -26,8 +26,8 @@ sentences), `reach` (see #8) and `avoid` (streets named in the banner).
 Gessner), pulled 2026-10-15. NOAA doesn't publish a normal level for these gauges.
 
 **6. Harvey data is saved exactly as USGS published it** (approved data, 15-minute readings). We
-did not fill in gaps. The Gessner gauge's 24-hour silence at the peak is real, and the replay
-shows how the app handles it.
+did not fill in gaps. The Gessner gauge's 24-hour silence at the peak is real, and a test checks
+how the app handles it.
 
 **7. Bayou geometry from OpenStreetMap.** The center line of Brays Bayou (5 OSM ways, simplified
 from 292 to 106 points, each within 8 m of the original) is stored in `src/data/brays-bayou.ts`
@@ -171,7 +171,12 @@ the readings are.
 NWS threshold. The note quotes a fact from the Harvey data: S Main St rose more than 12 ft in one
 hour (a test checks this).
 
-**36. Warning time is reported two ways** in the replay: from each gauge's own action stage to its
+**35b. No Harvey Replay page** (spec deviation, the student's call after trying the app). The
+page didn't help someone trying to get out, and it took space in the menu. The Harvey data stays
+as automated tests (`src/lib/harvey.test.ts`), so "Tested on Hurricane Harvey" is still true and
+checkable with `npm test`.
+
+**36. Warning time is measured two ways** by the Harvey tests: from each gauge's own action stage to its
 flood stage (30 minutes at Gessner, 2.5 hours at S Main), and from the first alert anywhere to each
 gauge flooding (3.5 hours at S Main). Both are true, and the short one is shown honestly.
 

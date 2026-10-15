@@ -17,7 +17,10 @@ export function About() {
         <li>Compares each reading with the National Weather Service's flood stages.</li>
         <li>Marks the stretch of bayou each gauge watches as a danger zone when it isn't safe.</li>
         <li>Plans a driving route that stays out of those zones.</li>
-        <li>Replays Hurricane Harvey to show how it would have behaved.</li>
+        <li>
+          Was tested on the real Hurricane Harvey water levels: it would have raised its first
+          alert at 9:00 PM on Aug 26, 2017, 3.5 hours before Brays Bayou flooded at S Main St.
+        </li>
       </ul>
 
       <h2>Where the data comes from</h2>

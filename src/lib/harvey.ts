@@ -1,4 +1,6 @@
-// Hurricane Harvey (August 2017), replayed through the same logic the live app uses.
+// Hurricane Harvey (August 2017): the real gauge readings, used by the tests in harvey.test.ts
+// to check that the app's logic would have warned people in time. This file is NOT part of the
+// app people download; only the tests use it.
 
 import harveyJson from "../data/harvey-2017.json";
 import type { Gauge } from "../data/gauges";

@@ -9,7 +9,8 @@ do I drive out without hitting it?*
 - Live water levels from the official Brays Bayou gauges (NOAA), checked every 5 minutes
 - A danger map that follows the bayou, colored by the National Weather Service flood stages
 - **Get Me Out**: a driving route that stays out of the danger zones
-- **Harvey Replay**: the real Hurricane Harvey water levels, played through the same code
+- **Tested on Hurricane Harvey**: automated tests run the real Harvey water levels through the
+  same code (`npm test`)
 - Rain outlook from the National Weather Service
 - Installs to a phone's home screen and still opens with no signal (last known readings)
 
@@ -101,7 +102,7 @@ vercel --prod                                 # build and publish
 /docs           HOW-IT-WORKS.md, DECISIONS.md, DEMO-SCRIPT.md
 /scripts        make-cover.ts, make-icons.ts, fetch-harvey.ts, check-gauges.ts, fonts/
 /src
-  /components   Map, Legend, StatusBanner, GaugeCard, RoutePanel, RainOutlook, HarveyReplay, ...
+  /components   Map, Legend, StatusBanner, GaugeCard, RoutePanel, RainOutlook, ...
   /data         gauges.ts, brays-bayou.ts, harvey-2017.json
   /lib          risk.ts, colors.ts, nwps.ts, weather.ts, routing.ts, geo.ts, ... (+ tests)
   App.tsx, main.tsx

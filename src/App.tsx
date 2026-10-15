@@ -3,22 +3,18 @@ import { Home } from "./components/Home";
 import { Logo } from "./components/Logo";
 import { Link, usePath } from "./router";
 
-// The Harvey and About pages load only when you open them, so the main screen opens faster.
-const HarveyReplay = lazy(() =>
-  import("./components/HarveyReplay").then((m) => ({ default: m.HarveyReplay })),
-);
+// The About page loads only when you open it, so the main screen opens faster.
 const About = lazy(() => import("./components/About").then((m) => ({ default: m.About })));
 
 const PAGES = [
   { href: "/", label: "Live" },
-  { href: "/harvey", label: "Harvey Replay" },
   { href: "/about", label: "About" },
 ];
 
 export function App() {
   const path = usePath();
   const page =
-    path === "/harvey" ? <HarveyReplay /> : path === "/about" ? <About /> : <Home />;
+    path === "/about" ? <About /> : <Home />;
 
   return (
     <>

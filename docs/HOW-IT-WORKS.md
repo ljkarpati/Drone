@@ -175,18 +175,15 @@ app's actual danger zones in 56 combinations (4 flood scenarios, 7 starting poin
 danger stretch. A starting point south of the bayou drives roughly 8 to 13 km extra to cross somewhere safe,
 which is exactly what a driver who knew where the water was would do.
 
-## 6. The Harvey Replay
+## 6. Tested on Hurricane Harvey
 
 `src/data/harvey-2017.json` holds the real water levels from both gauges, every 15 minutes, from
-August 25 to September 2, 2017, downloaded once from USGS (`npm run fetch-harvey`). It's saved in
-the app, so the replay never needs the internet.
+August 25 to September 2, 2017, downloaded once from USGS (`npm run fetch-harvey`). It isn't part
+of the app people download; the tests in `src/lib/harvey.test.ts` use it.
 
-The replay doesn't have any special Harvey logic. At each moment on the slider it calls the
-**exact same functions** as the live app (`gaugeStatusesAt`, `classifyRisk`, `riskZones`,
-`bannerSentence`) with the readings that existed at that moment. So what you see is what the live
-app would have shown.
-
-What it shows (all from the real data, all checked by tests in `harvey.test.ts`):
+Those tests run the Harvey readings through the **exact same functions** the live app uses
+(`gaugeStatusesAt`, `classifyRisk`, `riskZones`) and check what the app would have said. Run
+`npm test` to see them pass. Here's what they confirm:
 
 | Time (Houston) | What happened |
 | --- | --- |
@@ -207,9 +204,6 @@ What it shows (all from the real data, all checked by tests in `harvey.test.ts`)
 **The honest lesson:** Brays Bayou rises fast. At S Main St it climbed more than 12 feet in one
 hour. A gauge alone can't give hours of notice. That's why the app shows the rain forecast too,
 and why it plans the way out instead of leaving you to find it by trial and error in the dark.
-
-You can tap **Get Me Out** at any moment in the replay to see the route the app would have
-suggested. (It uses today's roads.)
 
 ## 7. Offline and errors
 
@@ -244,7 +238,7 @@ estimate between gauges, and we say so in the app.
 
 **3. What happens if a gauge breaks during the flood?**
 If its last reading was dangerous, we keep showing that danger and label it "last known". That
-actually happened at Gessner during Harvey, and the replay shows it.
+actually happened at Gessner during Harvey, and a test checks the app handles it.
 
 **4. How does the route avoid the water?**
 We turn each danger zone into polygons and send them to OpenRouteService as "avoid polygons".
@@ -265,7 +259,7 @@ Partly. It installs like an app, opens with no signal, and shows the last readin
 Routing needs a connection.
 
 **8. How do you know it would have worked in Harvey?**
-The replay runs the real Harvey readings through the exact same code as the live app. It would
+Our tests run the real Harvey readings through the exact same code as the live app. It would
 have raised its first alert at 9:00 PM on August 26, 3.5 hours before S Main St flooded. It also
 shows honestly that at Gessner the warning was only 30 minutes.
 

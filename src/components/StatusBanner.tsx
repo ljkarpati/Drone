@@ -8,10 +8,9 @@ import { RiskIcon } from "./RiskIcon";
 type Props = {
   statuses: GaugeStatus[];
   loading?: boolean; // first download still in progress and nothing saved to show
-  note?: string; // small line under the sentence, e.g. the replay time
 };
 
-export function StatusBanner({ statuses, loading = false, note }: Props) {
+export function StatusBanner({ statuses, loading = false }: Props) {
   if (loading) {
     return (
       <section className="status-banner status-loading" role="status" aria-live="polite">
@@ -36,7 +35,6 @@ export function StatusBanner({ statuses, loading = false, note }: Props) {
       <div>
         <p className="status-label">{style.label}</p>
         <p className="status-sentence">{bannerSentence(statuses)}</p>
-        {note && <p className="status-note">{note}</p>}
       </div>
     </section>
   );

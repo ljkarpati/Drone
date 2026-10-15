@@ -20,10 +20,9 @@ import {
 type Props = {
   zones: RiskZones;
   onChange: (state: { start: Place | null; end: Place | null; outcome: RouteOutcome | null }) => void;
-  note?: string; // e.g. "Using the flood zones from Sun, Aug 27, 4:45 AM"
 };
 
-export function RoutePanel({ zones, onChange, note }: Props) {
+export function RoutePanel({ zones, onChange }: Props) {
   const [start, setStart] = useState<Place | null>(null);
   const [end, setEnd] = useState<Place | null>(null);
   const [endChoice, setEndChoice] = useState<string | null>(null);
@@ -101,7 +100,6 @@ export function RoutePanel({ zones, onChange, note }: Props) {
   return (
     <section className="card route-panel" aria-labelledby="route-title">
       <h2 id="route-title">Get Me Out</h2>
-      {note && <p className="fine">{note}</p>}
 
       <fieldset>
         <legend>From</legend>
