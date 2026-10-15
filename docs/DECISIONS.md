@@ -197,6 +197,17 @@ segmented control, and the phone's own system font (San Francisco on iPhone), so
 downloads. No decorative animation: the only motion is a slight press effect on buttons. Every
 gray text color was checked for at least 4.5 : 1 contrast in light and dark mode.
 
+**36c. Weather-app look** (the student's choice, from weather app designs they liked). The page
+sits on a "sky" whose color follows the danger level: calm blue when safe, amber storm when
+rising, deep red when flooding, purple at major, with light rain streaks once it isn't safe (off
+when the phone asks for reduced motion). The top shows one huge thin number, how close the bayou
+is to flood stage, like the temperature in a weather app. Panels are frosted glass with white
+text. There are no photos or font downloads, so it stays fast; the sky is just CSS gradients.
+Spec deviation: the spec asked for light and dark mode following the system setting. The sky is
+always dark enough for white text (at least 6 : 1 contrast at its brightest point); in the
+phone's dark mode it gets a little deeper. The map uses night-style streets to match, and the
+route line is white with a navy edge so it stands out on them.
+
 **37. Tooling versions.** Vitest 5 (the 3.x line has published security advisories in its
 dependencies, and 4.x hit an npm install bug). Vite 7, React 19, react-leaflet 5, TypeScript 5.9.
 

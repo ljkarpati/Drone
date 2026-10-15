@@ -5,7 +5,7 @@ import { GAUGES } from "../data/gauges";
 import { testModeAllowed, useLiveGauges, useNow, useRainOutlook } from "../hooks";
 import { formatClock } from "../lib/format";
 import { prefetchLocation } from "../lib/locate";
-import { riskZones } from "../lib/risk";
+import { overallStatus, riskZones } from "../lib/risk";
 import type { Place, RouteOutcome } from "../lib/routing";
 import { gaugeStatusesAt, levelsKey, readingsById } from "../lib/status";
 import { applyOverrides, type Override } from "../lib/testmode";
@@ -43,6 +43,12 @@ export function Home() {
   const zones = useMemo(() => riskZones(GAUGES, readingsById(statuses)), [key]);
 
   const hasAnyReading = statuses.some((s) => s.reading);
+
+  // The whole page's "sky" color follows the danger level (see styles.css).
+  const level = overallStatus(statuses.map((s) => s.level));
+  useEffect(() => {
+    document.documentElement.dataset.level = level;
+  }, [level]);
   const route = routeState.outcome?.kind === "ok" ? routeState.outcome.route.coords : null;
 
   return (
@@ -65,15 +71,15 @@ export function Home() {
         end={routeState.end}
       />
 
-      <section aria-labelledby="gauges-title">
-        <h2 id="gauges-title" className="section-title">
-          Brays Bayou
+      <section className="glass" aria-labelledby="gauges-title">
+        <h2 id="gauges-title" className="glass-title">
+          Gauges
         </h2>
-        <div className="gauge-grid">
+        <ul className="rows">
           {statuses.map((s) => (
             <GaugeCard key={s.gauge.id} status={s} />
           ))}
-        </div>
+        </ul>
       </section>
 
       <RainOutlook rain={rain} />

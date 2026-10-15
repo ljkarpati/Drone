@@ -1,54 +1,77 @@
-/* TurnAround styles.
-   Direction: a calm emergency utility, close to Apple's own apps. The status is a full-width
-   colored band (like a road sign), the map runs edge to edge, and the one action that matters,
-   Get Me Out, is pinned at the bottom within thumb reach. No drop shadows, no decorative motion.
-   Numbers and headlines use the iPhone's built-in rounded font (SF Pro Rounded via
-   "ui-rounded"), so nothing has to download. Corners get smaller as elements get smaller.
-   Risk colors are NOT here: they live in src/lib/colors.ts. */
+/* TurnAround styles: "weather app" look.
+   The whole page sits on a sky whose color follows the danger level (calm blue when safe,
+   amber storm when rising, deep red when flooding, purple-black at major), with light rain
+   streaks once it isn't safe. Panels are frosted glass with white text. There are no photos
+   or downloaded fonts, so it stays fast on a weak signal: the sky is just CSS gradients.
+   Every text color was checked for at least 4.5 : 1 contrast against the brightest sky.
+   Risk colors for badges and the map are NOT here: they live in src/lib/colors.ts. */
 
 :root {
-  --navy: #0b2545;
-  --bg: #f2f2f7;
-  --surface: #ffffff;
-  --surface2: #f2f2f7;
-  --text: #1c1c1e;
-  --muted: #636366;
-  --separator: rgb(60 60 67 / 0.18);
-  --track: rgb(120 120 128 / 0.16);
-  --link: #0b4fa3;
-  --accent: #0b2545;
-  --accent-text: #ffffff;
-  --tint: rgb(11 37 69 / 0.08);
+  --text: #ffffff;
+  --muted: rgb(255 255 255 / 0.8);
+  --faint: rgb(255 255 255 / 0.16);
+  --separator: rgb(255 255 255 / 0.16);
+  --glass: rgb(8 15 30 / 0.34);
+  --glass-strong: rgb(8 15 30 / 0.55);
+  --glass-border: rgb(255 255 255 / 0.14);
+  --field: rgb(255 255 255 / 0.14);
+  --link: #cfe3ff;
   --focus: #f2b705;
-  --bar: rgb(242 242 247 / 0.86);
   --gutter: 16px;
-  --r-lg: 20px; /* sections */
+  --r-lg: 22px; /* panels */
   --r-md: 14px; /* rows, buttons */
-  --r-sm: 9px; /* badges, inputs */
-  --rounded: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  color-scheme: light dark;
+  --r-sm: 8px; /* badges, inputs */
+
+  /* The sky for "safe". Other levels swap these three stops (below). */
+  --sky-1: #0f2f52;
+  --sky-2: #24507f;
+  --sky-3: #3a6593;
+  --rain: 0;
+
+  color-scheme: dark;
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   font-size: 17px;
   line-height: 1.45;
+  color: var(--text);
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
 }
 
+:root[data-level="atRisk"] {
+  --sky-1: #20232a;
+  --sky-2: #4a4026;
+  --sky-3: #6b5524;
+  --rain: 0.5;
+}
+
+:root[data-level="flooding"] {
+  --sky-1: #22141c;
+  --sky-2: #4a1d26;
+  --sky-3: #6b2a26;
+  --rain: 0.8;
+}
+
+:root[data-level="major"] {
+  --sky-1: #160e26;
+  --sky-2: #34195a;
+  --sky-3: #4c2a72;
+  --rain: 1;
+}
+
+:root[data-level="unknown"] {
+  --sky-1: #1d2127;
+  --sky-2: #363c45;
+  --sky-3: #49515c;
+}
+
+/* With the phone in dark mode, the sky is a little deeper. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #000000;
-    --surface: #1c1c1e;
-    --surface2: #2c2c2e;
-    --text: #f5f5f7;
-    --muted: #a1a1a6;
-    --separator: rgb(84 84 88 / 0.65);
-    --track: rgb(120 120 128 / 0.36);
-    --link: #7cb8ff;
-    --accent: #ffffff;
-    --accent-text: #0b2545;
-    --tint: rgb(255 255 255 / 0.1);
-    --bar: rgb(0 0 0 / 0.78);
+    --glass: rgb(0 0 0 / 0.38);
+  }
+  body::before {
+    filter: brightness(0.78);
   }
 }
 
@@ -61,10 +84,52 @@
 html,
 body {
   margin: 0;
-  background: var(--bg);
-  color: var(--text);
   /* "clip" (not "hidden") stops sideways scrolling without breaking the sticky header. */
   overflow-x: clip;
+  background: var(--sky-1);
+}
+
+/* The sky: fixed behind everything. Two soft "cloud" glows over a vertical gradient. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(ellipse 70% 40% at 85% 8%, rgb(255 255 255 / 0.16), transparent 70%),
+    radial-gradient(ellipse 60% 30% at 10% 35%, rgb(255 255 255 / 0.08), transparent 70%),
+    linear-gradient(180deg, var(--sky-1) 0%, var(--sky-2) 55%, var(--sky-3) 100%);
+  transition: background 0.6s;
+}
+
+/* Rain streaks, only when it isn't safe. Their strength follows the level (--rain). */
+body::after {
+  content: "";
+  position: fixed;
+  inset: -50% -10% 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: calc(var(--rain) * 0.55);
+  background: repeating-linear-gradient(
+    100deg,
+    transparent 0 14px,
+    rgb(255 255 255 / 0.22) 14px 15px,
+    transparent 15px 31px
+  );
+  background-size: 100% 220px;
+  animation: rain 0.9s linear infinite;
+}
+
+@keyframes rain {
+  to {
+    transform: translate3d(-22px, 110px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    animation: none;
+  }
 }
 
 a {
@@ -96,12 +161,12 @@ p {
   left: var(--gutter);
   top: 8px;
   z-index: 2000;
-  background: var(--surface);
+  background: #000;
   padding: 8px 12px;
   border-radius: var(--r-sm);
 }
 
-/* ---------- header ---------- */
+/* ---------- header: clear over the sky ---------- */
 
 .site-header {
   position: sticky;
@@ -111,10 +176,9 @@ p {
   align-items: center;
   justify-content: space-between;
   padding: env(safe-area-inset-top) var(--gutter) 0;
-  background: var(--bar);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 0.5px solid var(--separator);
+  background: rgb(0 0 0 / 0.18);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
 }
 
 .brand {
@@ -131,9 +195,8 @@ p {
 }
 
 .brand-name {
-  font-family: var(--rounded);
-  font-weight: 800;
-  font-size: 1.2rem;
+  font-weight: 700;
+  font-size: 1.15rem;
   letter-spacing: -0.01em;
 }
 
@@ -142,7 +205,7 @@ p {
   align-items: center;
   min-height: 48px;
   padding: 0 4px 0 12px;
-  color: var(--link);
+  color: var(--text);
   text-decoration: none;
   font-weight: 600;
 }
@@ -150,16 +213,16 @@ p {
 /* ---------- page ---------- */
 
 .page {
-  max-width: 760px;
+  max-width: 720px;
   margin: 0 auto;
   padding: 0 var(--gutter) 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .site-footer {
-  max-width: 760px;
+  max-width: 720px;
   margin: 0 auto;
   /* leave room for the pinned Get Me Out bar */
   padding: 4px var(--gutter) calc(env(safe-area-inset-bottom) + 112px);
@@ -168,10 +231,10 @@ p {
 }
 
 .page-title {
-  font-family: var(--rounded);
-  font-size: 2rem;
-  font-weight: 800;
-  margin: 20px 0 0;
+  font-size: 2.4rem;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  margin: 24px 0 0;
 }
 
 .lede {
@@ -179,34 +242,43 @@ p {
   margin: 0;
 }
 
-.section-title {
-  font-family: var(--rounded);
-  font-size: 1.35rem;
-  font-weight: 700;
-  margin: 0 0 10px;
-}
-
-.section-foot {
-  margin: 8px 2px 0;
-}
-
-.card {
-  background: var(--surface);
-  border-radius: var(--r-lg);
-  padding: 18px;
-  min-width: 0;
-}
-
 .fine {
   font-size: 1rem;
   color: var(--muted);
 }
 
-.notice {
+/* Frosted glass panel, the building block of every section. */
+.glass,
+.card,
+.notice,
+.trip-progress,
+.trip-message,
+.trip-result,
+.manual {
   margin: 0;
-  padding: 12px 14px;
-  border-radius: var(--r-md);
-  background: var(--surface);
+  padding: 16px;
+  border-radius: var(--r-lg);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  min-width: 0;
+}
+
+.glass-title {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.section-foot {
+  margin: 10px 0 0;
+}
+
+.notice {
   font-weight: 600;
 }
 
@@ -214,11 +286,12 @@ p {
   margin: 10px 0 0;
   padding: 12px 14px;
   border-radius: var(--r-md);
-  background: rgb(242 183 5 / 0.2);
+  background: rgb(242 183 5 / 0.24);
+  border: 1px solid rgb(242 183 5 / 0.45);
 }
 
 .test-banner {
-  margin: 12px 0 -8px;
+  margin: 12px 0 0;
   padding: 8px 12px;
   border-radius: var(--r-sm);
   background: repeating-linear-gradient(45deg, #f2b705 0 12px, #0b2545 12px 24px);
@@ -227,54 +300,82 @@ p {
   text-shadow: 0 1px 2px #000, 0 0 6px #000;
 }
 
-/* ---------- status band: edge to edge, square on top, rounded below ---------- */
+/* ---------- hero: the big number ---------- */
 
-.status-banner {
-  margin: 0 calc(-1 * var(--gutter));
-  padding: 22px var(--gutter) 24px;
-  border-radius: 0 0 28px 28px;
+.hero {
+  padding: 18px 2px 6px;
 }
 
-.test-banner + .status-banner {
-  margin-top: 16px;
-  border-radius: 28px;
+.hero-place {
+  margin: 0 0 4px;
+  font-weight: 600;
+  color: var(--muted);
 }
 
-.status-label {
+.hero-main {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 0 0 6px;
-  font-family: var(--rounded);
-  font-size: 1.15rem;
-  font-weight: 700;
+  gap: 16px;
 }
 
-.status-sentence {
+.hero-number {
   margin: 0;
-  font-family: var(--rounded);
-  font-size: 1.55rem;
-  font-weight: 700;
-  line-height: 1.2;
+  font-size: 6.2rem;
+  font-weight: 200;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-unit {
+  font-size: 2.6rem;
+  font-weight: 200;
+  vertical-align: top;
+  margin-left: 2px;
+}
+
+.hero-side {
+  min-width: 0;
+}
+
+.hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+}
+
+.hero-condition {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 500;
+  line-height: 1.1;
   letter-spacing: -0.01em;
 }
 
-.status-updated {
-  margin: 10px 0 0;
+.hero-caption {
+  margin: 2px 0 0;
+  color: var(--muted);
   font-size: 1rem;
-  font-weight: 500;
-  opacity: 0.9;
 }
 
-.status-loading {
-  background: var(--surface);
-  color: var(--text);
-}
-
-.status-loading .status-sentence {
+.hero-sentence {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
+  margin: 14px 0 0;
+  font-size: 1.2rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.hero-updated {
+  margin: 8px 0 0;
+  font-size: 1rem;
+  color: var(--muted);
 }
 
 .spinner {
@@ -309,30 +410,31 @@ p {
   bottom: 0;
   z-index: 1600;
   padding: 10px var(--gutter) calc(env(safe-area-inset-bottom) + 10px);
-  background: var(--bar);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  backdrop-filter: saturate(180%) blur(20px);
-  border-top: 0.5px solid var(--separator);
+  background: rgb(0 0 0 / 0.28);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
 }
 
 .get-me-out {
   display: block;
   width: 100%;
-  max-width: 728px;
+  max-width: 688px;
   min-height: 60px;
   margin: 0 auto;
   border: none;
-  border-radius: var(--r-md);
-  background: var(--accent);
-  color: var(--accent-text);
-  font-family: var(--rounded);
-  font-size: 1.45rem;
-  font-weight: 800;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #0b2545;
+  font: inherit;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   cursor: pointer;
 }
 
 .get-me-out:disabled {
-  opacity: 0.75;
+  opacity: 0.8;
   cursor: progress;
 }
 
@@ -351,38 +453,16 @@ p {
   scroll-margin-top: 64px;
 }
 
-.trip:empty {
-  display: none;
-}
-
 .trip-progress {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin: 0;
-  padding: 18px;
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  font-family: var(--rounded);
   font-size: 1.2rem;
-  font-weight: 700;
-}
-
-.trip-message {
-  margin: 0;
-  padding: 14px;
-  border-radius: var(--r-md);
-  background: var(--surface);
-}
-
-.trip-result {
-  padding: 18px;
-  border-radius: var(--r-lg);
-  background: var(--surface);
+  font-weight: 600;
 }
 
 .trip-none {
-  background: rgb(196 43 28 / 0.14);
+  background: rgb(120 20 20 / 0.5);
 }
 
 .trip-eyebrow {
@@ -392,10 +472,9 @@ p {
 }
 
 .trip-dest {
-  margin: 0 0 10px;
-  font-family: var(--rounded);
-  font-size: 1.55rem;
-  font-weight: 800;
+  margin: 0 0 8px;
+  font-size: 1.6rem;
+  font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.01em;
 }
@@ -410,15 +489,15 @@ p {
 }
 
 .trip-meta strong {
-  font-family: var(--rounded);
-  font-size: 1.8rem;
-  font-weight: 800;
+  font-size: 2.6rem;
+  font-weight: 200;
+  letter-spacing: -0.03em;
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
 
 .trip-via {
-  margin: 4px 0 0;
+  margin: 2px 0 0;
   color: var(--muted);
 }
 
@@ -426,7 +505,7 @@ p {
   list-style: none;
   margin: 14px 0 0;
   padding: 12px 0 0;
-  border-top: 0.5px solid var(--separator);
+  border-top: 1px solid var(--separator);
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -445,12 +524,11 @@ p {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: #1b7a3d;
+  background: #34c759;
 }
 
 .trip-facts li.is-warn::before {
   background: #f2b705;
-  box-shadow: 0 0 0 1px #7a5a00;
 }
 
 .trip-actions {
@@ -462,12 +540,6 @@ p {
 
 .trip-change {
   align-self: flex-start;
-}
-
-.manual {
-  padding: 18px;
-  border-radius: var(--r-lg);
-  background: var(--surface);
 }
 
 /* ---------- buttons and forms ---------- */
@@ -494,12 +566,12 @@ p {
 }
 
 .btn-primary {
-  background: var(--accent);
-  color: var(--accent-text);
+  background: #ffffff;
+  color: #0b2545;
 }
 
 .btn-secondary {
-  background: var(--track);
+  background: var(--field);
   color: var(--text);
 }
 
@@ -512,7 +584,6 @@ p {
   width: 100%;
   min-height: 56px;
   font-size: 1.15rem;
-  font-weight: 700;
 }
 
 .btn-link {
@@ -540,9 +611,11 @@ fieldset {
 legend {
   margin: 0 0 6px;
   padding: 0;
-  font-family: var(--rounded);
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
 }
 
 label > span:first-child {
@@ -558,11 +631,15 @@ select {
   padding: 8px 12px;
   border-radius: var(--r-sm);
   border: none;
-  background: var(--track);
+  background: var(--field);
   color: var(--text);
   min-width: 0;
   -webkit-appearance: none;
   appearance: none;
+}
+
+input::placeholder {
+  color: rgb(255 255 255 / 0.6);
 }
 
 select {
@@ -574,6 +651,10 @@ select {
     calc(100% - 13px) 50%;
   background-size: 5px 5px;
   background-repeat: no-repeat;
+}
+
+select option {
+  color: #000;
 }
 
 .address-row {
@@ -592,11 +673,11 @@ select {
   margin: 8px 0 0;
   border-radius: var(--r-md);
   overflow: hidden;
-  background: var(--surface2);
+  background: rgb(255 255 255 / 0.08);
 }
 
 .address-results li + li {
-  border-top: 0.5px solid var(--separator);
+  border-top: 1px solid var(--separator);
 }
 
 .address-result {
@@ -635,7 +716,7 @@ select {
   flex-direction: column;
   border-radius: var(--r-md);
   overflow: hidden;
-  background: var(--surface2);
+  background: rgb(255 255 255 / 0.08);
 }
 
 .choices .choice {
@@ -643,7 +724,7 @@ select {
 }
 
 .choices .choice + .choice {
-  border-top: 0.5px solid var(--separator);
+  border-top: 1px solid var(--separator);
 }
 
 .choice {
@@ -657,7 +738,7 @@ select {
   padding: 11px 44px 11px 14px;
   border: none;
   border-radius: var(--r-md);
-  background: var(--surface2);
+  background: rgb(255 255 255 / 0.08);
   color: var(--text);
   font: inherit;
   font-weight: 600;
@@ -684,15 +765,15 @@ select {
 }
 
 .choice[aria-pressed="true"] {
-  background: var(--tint);
+  background: rgb(255 255 255 / 0.2);
 }
 
 .choice[aria-pressed="true"]::after {
   width: 7px;
   height: 13px;
   border-top: none;
-  border-right: 3px solid var(--accent);
-  border-bottom: 3px solid var(--accent);
+  border-right: 3px solid #fff;
+  border-bottom: 3px solid #fff;
   transform: translateY(-65%) rotate(45deg);
 }
 
@@ -708,21 +789,28 @@ select {
   vertical-align: 2px;
 }
 
-/* ---------- map and legend: edge to edge on phones ---------- */
+/* ---------- map and legend ---------- */
 
 .map-wrap {
   position: relative;
-  margin: 0 calc(-1 * var(--gutter));
+  border-radius: var(--r-lg);
   overflow: hidden;
   isolation: isolate;
+  border: 1px solid var(--glass-border);
 }
 
 .map {
-  height: 56vh;
+  height: 52vh;
   min-height: 320px;
-  max-height: 600px;
+  max-height: 560px;
   width: 100%;
-  background: #dfe6ee;
+  background: #1b2433;
+}
+
+/* Night-style streets so the map sits naturally on the sky. Only the street tiles are
+   darkened; zones, the bayou and the route keep their true colors on top. */
+.leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6);
 }
 
 .leaflet-touch .leaflet-bar,
@@ -730,7 +818,6 @@ select {
   border: none !important;
   border-radius: var(--r-md) !important;
   overflow: hidden;
-  box-shadow: 0 1px 6px rgb(0 0 0 / 0.2) !important;
 }
 
 /* Bigger zoom buttons, so they're easy to hit with a thumb. */
@@ -740,8 +827,9 @@ select {
   height: 48px;
   line-height: 48px;
   font-size: 24px;
-  color: #1c1c1e;
-  background: rgb(255 255 255 / 0.94);
+  color: #fff;
+  background: rgb(20 26 38 / 0.82);
+  border-bottom-color: var(--separator) !important;
 }
 
 .leaflet-container {
@@ -755,17 +843,7 @@ select {
 
 .leaflet-popup-content-wrapper {
   border-radius: var(--r-md);
-}
-
-/* Night mode for the map: darken the street tiles only. Zones, the bayou and the route keep
-   their true colors because they're drawn on top in their own layers. */
-@media (prefers-color-scheme: dark) {
-  .leaflet-tile-pane {
-    filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
-  }
-  .map {
-    background: #1b2433;
-  }
+  color: #1c1c1e;
 }
 
 .gauge-pin-wrap,
@@ -782,7 +860,7 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.4);
 }
 
 .gauge-pin-label {
@@ -797,7 +875,6 @@ select {
   font-size: 13px;
   padding: 1px 7px;
   border-radius: 6px;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
 }
 
 .place-pin {
@@ -806,12 +883,11 @@ select {
   justify-content: center;
   height: 30px;
   border-radius: 8px;
-  background: #0b2545;
-  color: #fff;
-  border: 2px solid #fff;
+  background: #fff;
+  color: #0b2545;
   font-weight: 700;
   font-size: 14px;
-  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.4);
 }
 
 .legend {
@@ -822,16 +898,9 @@ select {
   max-width: calc(100% - 20px);
   color: var(--text);
   border-radius: var(--r-md);
-  background: rgb(255 255 255 / 0.9);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
-  backdrop-filter: saturate(180%) blur(16px);
-  box-shadow: 0 1px 6px rgb(0 0 0 / 0.2);
-}
-
-@media (prefers-color-scheme: dark) {
-  .legend {
-    background: rgb(28 28 30 / 0.9);
-  }
+  background: rgb(20 26 38 / 0.85);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
 }
 
 .legend-toggle {
@@ -888,72 +957,66 @@ select {
 
 .legend-route {
   height: 8px;
-  box-shadow: 0 0 0 2px #fff;
+  box-shadow: 0 0 0 2px #0b2545;
 }
 
-/* ---------- gauges ---------- */
+/* ---------- gauge rows ---------- */
 
-.gauge-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-.widget {
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.row + .row {
+  border-top: 1px solid var(--separator);
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.row-sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.row-end {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 2px;
-  min-width: 0;
-  margin: 0;
-  padding: 14px;
-  border-radius: var(--r-lg);
-  background: var(--surface);
+  text-align: right;
 }
 
-.widget-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 6px;
-  width: 100%;
-}
-
-.widget-title {
+.row-value {
   margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  line-height: 1.25;
-}
-
-.metric {
-  margin: 0;
-  font-family: var(--rounded);
-  font-size: 2.2rem;
-  font-weight: 700;
-  line-height: 1.05;
+  font-size: 1.7rem;
+  font-weight: 300;
+  line-height: 1.1;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
 
-.metric-sm {
-  font-size: 1.6rem;
-}
-
-.metric-unit {
-  margin-left: 3px;
-  font-family: var(--rounded);
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--muted);
-  letter-spacing: 0;
-}
-
-.widget-foot {
-  margin: 4px 0 0;
+.row-unit {
+  margin-left: 2px;
   font-size: 1rem;
   color: var(--muted);
-  line-height: 1.3;
 }
 
 .ring {
@@ -961,16 +1024,9 @@ select {
 }
 
 .ring-text {
-  font-family: var(--rounded);
   font-size: 12px;
-  font-weight: 700;
-  fill: var(--text);
-}
-
-.trend {
-  margin: 0 0 6px;
   font-weight: 600;
-  font-size: 1rem;
+  fill: #fff;
 }
 
 .badge {
@@ -989,22 +1045,48 @@ select {
   font-weight: 600;
 }
 
-/* ---------- rain: one row, not more cards ---------- */
+/* ---------- rain ---------- */
 
 .rain-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  border-radius: var(--r-lg);
-  background: var(--surface);
 }
 
 .rain-row > div {
-  padding: 14px;
   min-width: 0;
 }
 
 .rain-row > div + div {
-  border-left: 0.5px solid var(--separator);
+  padding-left: 14px;
+  border-left: 1px solid var(--separator);
+}
+
+.metric {
+  margin: 0;
+  font-size: 2.4rem;
+  font-weight: 200;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-sm {
+  font-size: 2.2rem;
+}
+
+.metric-unit {
+  margin-left: 3px;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.widget-foot {
+  margin: 4px 0 0;
+  font-size: 1rem;
+  color: var(--muted);
+  line-height: 1.3;
 }
 
 /* ---------- test mode, about ---------- */
@@ -1038,8 +1120,8 @@ select {
 }
 
 .prose h2 {
-  font-family: var(--rounded);
   font-size: 1.3rem;
+  font-weight: 600;
   margin-top: 18px;
 }
 
@@ -1054,13 +1136,7 @@ select {
     --gutter: 24px;
   }
 
-  .status-banner {
-    margin: 16px 0 0;
-    border-radius: 28px;
-  }
-
-  .map-wrap {
-    margin: 0;
-    border-radius: var(--r-lg);
+  .hero-number {
+    font-size: 7.5rem;
   }
 }

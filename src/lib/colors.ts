@@ -62,8 +62,8 @@ export const BRAND = {
   navy: "#0B2545",
   white: "#FFFFFF",
   bayou: "#2F7FC1", // the blue line of Brays Bayou on the map
-  route: "#0B2545", // the safe route: thick navy line...
-  routeCasing: "#FFFFFF", // ...with a white edge so it shows on any street color
+  route: "#FFFFFF", // the safe route: thick white line on the night-style map...
+  routeCasing: "#0B2545", // ...with a navy edge so it stands out from the streets
 };
 
 // WCAG contrast ratio between two hex colors (1 = no contrast, 21 = black on white).
