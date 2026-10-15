@@ -32,6 +32,9 @@ const outputs: [string, string][] = [
   ["public/icons/icon-512.png", roundedIcon(512)],
   ["public/icons/icon-maskable-512.png", fullBleedIcon(512, 0.55)],
   ["public/icons/apple-touch-icon.png", fullBleedIcon(180, 0.62)],
+  // Large versions for forms and app listings (not used by the website itself).
+  ["cover/icon-1024-rounded.png", roundedIcon(1024)],
+  ["cover/icon-1024-square.png", fullBleedIcon(1024, 0.62)],
 ];
 
 for (const [file, svg] of outputs) {
