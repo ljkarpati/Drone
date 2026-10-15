@@ -89,14 +89,27 @@ route ever touched one, a red warning would show.
 **19. Our server refuses trips outside greater Houston and caps the number of polygons**, so the
 ORS key can't be used as a free routing service by others.
 
-**20. Address search is limited to a box around Houston and focused on Meyerland**, so "Main St"
-finds Houston's Main St. The search runs on Enter, not on every keystroke, to stay within the free
-quota.
+**20. Address search uses two services.** In real use, typing a house number into ORS often
+returned only the street (four identical "Bankside Drive" results with no number). Now, anything
+starting with a house number goes first to the free US Census Bureau geocoder, which knows the
+house-number ranges of every US street. ORS still handles place names. Duplicates are removed,
+and street-only answers are labeled "Street only". The search is limited to greater Houston,
+focused on Meyerland, and runs on Enter, not on every keystroke, to stay within the free quota.
 
-**21. Preset destinations are intersections on higher ground** from OpenStreetMap: Stella Link Rd
-at Holcombe Blvd (north) and Hillcroft Ave at Westpark Dr (west), both more than 1.5 km from the
-bayou. We kept the spec's labels. The router chooses the roads, so "via Stella Link" describes the
-direction, not a guaranteed road.
+**21. Destinations depend on which side of the bayou you start on** (added after testing; the
+spec's presets made people south of the bayou drive across it). The app works out your side of
+Brays Bayou from the bayou's center line, recommends destinations on your side first (highest
+ground first, marked "Best"), and lists the others under "Across Brays Bayou: only if you must".
+Every result also says where the route crosses Brays Bayou, and warns if it crosses Willow
+Waterhole Bayou, which has no gauge. On real roads, a start on Bankside Dr during a flood went
+from a 17.8 km loop across the bayou to 3.4 km with no crossing.
+
+**21b. Destinations were chosen with real ground heights** from the USGS Elevation Point Query
+Service. Meyerland sits at about 53–57 ft, and the land rises to the west. North side: Hillcroft
+Ave at Westpark Dr (63 ft) and the spec's Stella Link Rd at Holcombe Blvd (49 ft; it's away from
+the bayou but lower than Meyerland, so it's listed second). South side: S Gessner Dr at W Bellfort
+Ave (65 ft, reachable from south Meyerland without crossing any bayou) and Hillcroft Ave at W
+Airport Blvd (60 ft, across Willow Waterhole). The app shows each one's height.
 
 **22. Google Maps gets 3 stops along our route** (the most phone browsers accept in a link), so it
 follows our path. Apple Maps links can't take stops, so the app warns that Apple may choose other
@@ -162,16 +175,18 @@ hour (a test checks this).
 flood stage (30 minutes at Gessner, 2.5 hours at S Main), and from the first alert anywhere to each
 gauge flooding (3.5 hours at S Main). Both are true, and the short one is shown honestly.
 
+**36b. Apple-style design.** Widgets on a grouped gray background, a frosted header with a
+segmented control, and the phone's own system font (San Francisco on iPhone), so nothing extra
+downloads. No decorative animation: the only motion is a slight press effect on buttons. Every
+gray text color was checked for at least 4.5 : 1 contrast in light and dark mode.
+
 **37. Tooling versions.** Vitest 5 (the 3.x line has published security advisories in its
 dependencies, and 4.x hit an npm install bug). Vite 7, React 19, react-leaflet 5, TypeScript 5.9.
 
 ## Open questions for the student
 
-- **Which way should south-side residents go?** Meyerland is on both banks of Brays Bayou. For
-  anyone on the south side, both presets mean crossing the bayou, which is what floods first. In
-  testing, those routes add 8–13 km to reach a safe crossing. A third preset going south, away from
-  the bayou, may be more useful, but it needs local knowledge of which streets stay dry (Willow
-  Waterhole floods too).
+- **Are the south-side destinations right?** Decision 21 answers this with elevation data, but
+  someone who lived through 2016 and 2017 in Meyerland should confirm those streets stayed dry.
 - **Are the zone widths right?** Compare 150 / 350 / 600 m with FEMA flood maps or with what you
   saw in 2016 and 2017.
 - **More gauges.** The Harris County Flood Warning System has gauges much closer to Meyerland.

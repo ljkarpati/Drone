@@ -125,7 +125,17 @@ that every point of the bayou in a gauge's reach is covered with no gaps.
 ## 5. From danger zones to a route
 
 When you tap **Get Me Out**, you pick a start (your location, an address, or the demo start)
-and a destination (a preset on higher ground, or any address).
+and a destination.
+
+**Which way is "out"?** The app works out which side of Brays Bayou you're on (`braysSide()` in
+`src/lib/sides.ts`: it finds the closest piece of the bayou and checks whether you're to its left
+or right as the water flows east). Then it recommends destinations on **your** side, highest
+ground first, because the bridges are the first places to flood. Ground heights come from the
+USGS elevation service: Meyerland is about 53–57 ft, and the recommended spots are 60–65 ft.
+Destinations across the bayou are still listed, under "only if you must".
+
+Addresses with a house number are looked up with the US Census Bureau geocoder, which knows every
+street's house numbers. Place names go to OpenRouteService.
 
 `buildAvoidAreas()` in `routing.ts` turns the zones into the list of areas the route must avoid.
 Normally that's simply every circle. The tricky case is when **you start inside a danger zone**,
@@ -149,7 +159,9 @@ Then:
    and call 911 if you are in danger."*
 4. If it finds one, **the app double-checks it**: it walks along the route every 20 m and makes
    sure no point is inside an avoid area. If one were, a red warning would appear.
-5. The route is drawn in bold navy with a white edge, with distance, time and the main roads.
+5. The route is drawn in bold navy with a white edge, with drive time, distance, how many danger
+   areas it avoids, the main roads, and **where it crosses a bayou** (for example "crosses Brays
+   Bayou at Fondren Rd", or a warning if it crosses Willow Waterhole Bayou, which has no gauge).
 6. "Open in Google Maps" passes 3 points along our route, so Google follows it. Apple Maps links
    can only take a start and an end, so the app warns that Apple may choose different roads.
 

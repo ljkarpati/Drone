@@ -1,13 +1,14 @@
-// The center line of Brays Bayou from Alief to just past S Main St, flowing west to east.
-// Each point is [longitude, latitude] (GeoJSON order: x before y).
+// The center line of Brays Bayou from Alief to just past the Texas Medical Center, flowing
+// west to east. Each point is [longitude, latitude] (GeoJSON order: x before y).
 //
 // Source: OpenStreetMap ways 568993865, 766745878, 766745879, 766745880 and 766745881
 // (waterway "Brays Bayou"), downloaded 2026-10-15 through the Overpass API and simplified from
-// 292 to 106 points (every simplified point stays within 8 m of the original line).
+// 332 to 116 points (every simplified point stays within 8 m of the original line).
 // Map data (c) OpenStreetMap contributors, available under the Open Database License (ODbL).
 //
-// We use this line two ways: to draw the bayou on the map, and to place danger zones along the
-// stretch of bayou each gauge is responsible for (see riskZones in src/lib/risk.ts).
+// We use this line to draw the bayou on the map, to place danger zones along the stretch of
+// bayou each gauge is responsible for (see riskZones in src/lib/risk.ts), and to tell which
+// side of the bayou you are on (see src/lib/sides.ts).
 
 export const BRAYS_BAYOU: [number, number][] = [
   [-95.55998, 29.69584],
@@ -24,25 +25,24 @@ export const BRAYS_BAYOU: [number, number][] = [
   [-95.54878, 29.68709],
   [-95.54945, 29.68473],
   [-95.54943, 29.68419],
+  [-95.54887, 29.68267],
   [-95.54857, 29.68216],
   [-95.54807, 29.68185],
   [-95.54395, 29.68089],
   [-95.53898, 29.68024],
   [-95.53841, 29.68037],
   [-95.53756, 29.68105],
-  [-95.53716, 29.68111],
+  [-95.53701, 29.68106],
   [-95.53451, 29.67940],
   [-95.53390, 29.67928],
   [-95.53258, 29.67932],
-  [-95.53203, 29.67916],
   [-95.53173, 29.67896],
   [-95.53067, 29.67771],
   [-95.53041, 29.67420],
   [-95.53026, 29.67379],
   [-95.52982, 29.67330],
-  [-95.52653, 29.67217],
   [-95.52576, 29.67196],
-  [-95.52501, 29.67195],
+  [-95.52173, 29.67216],
   [-95.52089, 29.67224],
   [-95.51511, 29.67382],
   [-95.51449, 29.67409],
@@ -91,11 +91,13 @@ export const BRAYS_BAYOU: [number, number][] = [
   [-95.43283, 29.69134],
   [-95.43193, 29.69111],
   [-95.43116, 29.69113],
-  [-95.42978, 29.69142],
+  [-95.42942, 29.69154],
   [-95.42902, 29.69186],
-  [-95.42865, 29.69381],
+  [-95.42875, 29.69357],
+  [-95.42844, 29.69407],
   [-95.42658, 29.69625],
-  [-95.42542, 29.69690],
+  [-95.42577, 29.69675],
+  [-95.42497, 29.69700],
   [-95.42428, 29.69702],
   [-95.42340, 29.69689],
   [-95.42127, 29.69584],
@@ -106,14 +108,23 @@ export const BRAYS_BAYOU: [number, number][] = [
   [-95.41464, 29.69788],
   [-95.41345, 29.69770],
   [-95.41178, 29.69726],
-  [-95.41087, 29.69728],
+  [-95.41070, 29.69732],
   [-95.41012, 29.69758],
-  [-95.40909, 29.69832],
-  [-95.40875, 29.69872],
+  [-95.40899, 29.69842],
   [-95.40812, 29.69996],
   [-95.40753, 29.70063],
-  [-95.40539, 29.70200],
-  [-95.40466, 29.70224],
+  [-95.40507, 29.70214],
+  [-95.40446, 29.70226],
   [-95.40290, 29.70226],
   [-95.40145, 29.70270],
+  [-95.39835, 29.70282],
+  [-95.39771, 29.70295],
+  [-95.39648, 29.70342],
+  [-95.39507, 29.70350],
+  [-95.39434, 29.70377],
+  [-95.39376, 29.70420],
+  [-95.39348, 29.70461],
+  [-95.39260, 29.70673],
+  [-95.39220, 29.70706],
+  [-95.39156, 29.70724],
 ];

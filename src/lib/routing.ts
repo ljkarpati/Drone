@@ -13,30 +13,91 @@ import {
   type LonLat,
 } from "./geo";
 import { BRAYS_BAYOU } from "../data/brays-bayou";
+import { braysCrossings, braysSide, crossesWillowWaterhole, type Side } from "./sides";
 import { gaugeById } from "../data/gauges";
 
-export type Place = { label: string; lon: number; lat: number };
+export type Place = {
+  label: string;
+  lon: number;
+  lat: number;
+  note?: string; // e.g. "Street only: exact house number not found"
+};
 
-export type Destination = Place & { id: string; detail: string };
+export type Destination = Place & {
+  id: string;
+  detail: string;
+  side: Side; // which side of Brays Bayou it's on
+  groundFt: number; // ground height above sea level, from USGS
+};
 
-// Preset destinations: higher ground well away from Brays Bayou (more than 1.5 km from it).
-// Coordinates are the intersections in OpenStreetMap (checked 2026-10-15).
+// Preset destinations, chosen with real ground heights from the USGS Elevation Point Query
+// Service (https://epqs.nationalmap.gov, checked 2026-10-15). Meyerland's streets sit at about
+// 53-57 ft; the land rises toward the west. Intersections come from OpenStreetMap.
+// The app recommends the ones on YOUR side of Brays Bayou, so you drive away from the water
+// instead of across it.
 export const PRESET_DESTINATIONS: Destination[] = [
-  {
-    id: "north",
-    label: "North of I-610 via Stella Link",
-    detail: "Stella Link Rd at Holcombe Blvd",
-    lon: -95.44022,
-    lat: 29.70598,
-  },
   {
     id: "west",
     label: "West via Hillcroft",
     detail: "Hillcroft Ave at Westpark Dr",
+    side: "north",
+    groundFt: 63,
     lon: -95.50113,
     lat: 29.72305,
   },
+  {
+    // In the original brief. It's 1.7 km from the bayou but LOWER than Meyerland, so it's
+    // listed after Hillcroft for people north of the bayou.
+    id: "north",
+    label: "North of I-610 via Stella Link",
+    detail: "Stella Link Rd at Holcombe Blvd",
+    side: "north",
+    groundFt: 49,
+    lon: -95.44022,
+    lat: 29.70598,
+  },
+  {
+    // The high ground for the south side: reachable from south Meyerland without crossing
+    // Brays Bayou or Willow Waterhole Bayou.
+    id: "southwest",
+    label: "Southwest via Gessner",
+    detail: "S Gessner Dr at W Bellfort Ave",
+    side: "south",
+    groundFt: 65,
+    lon: -95.52793,
+    lat: 29.65575,
+  },
+  {
+    // South of Willow Waterhole Bayou. From most of south Meyerland the route crosses it,
+    // and that bayou has no gauge, so the app warns about it.
+    id: "south",
+    label: "South via Hillcroft",
+    detail: "Hillcroft Ave at W Airport Blvd",
+    side: "south",
+    groundFt: 60,
+    lon: -95.49338,
+    lat: 29.64455,
+  },
 ];
+
+/**
+ * Splits the presets into the ones on your side of Brays Bayou (recommended, highest ground
+ * first) and the ones across it.
+ */
+export function destinationsFor(start: { lon: number; lat: number } | null): {
+  side: Side | null;
+  recommended: Destination[];
+  across: Destination[];
+} {
+  if (!start) return { side: null, recommended: PRESET_DESTINATIONS, across: [] };
+  const side = braysSide([start.lon, start.lat]);
+  const byHeight = (a: Destination, b: Destination) => b.groundFt - a.groundFt;
+  return {
+    side,
+    recommended: PRESET_DESTINATIONS.filter((d) => d.side === side).sort(byHeight),
+    across: PRESET_DESTINATIONS.filter((d) => d.side !== side).sort(byHeight),
+  };
+}
 
 // A starting point for demos when you are not in Houston: a Meyerland street south of the
 // bayou, about 500 m from it (intersection from OpenStreetMap, checked 2026-10-15).
@@ -67,6 +128,8 @@ export type RouteResult = {
   startInZone: string[]; // names of gauges whose danger zone you are starting in or next to
   endInZone: string[];
   crossesZone: boolean; // our own safety check: true would mean the route touches a zone
+  braysCrossings: string[]; // where the route crosses Brays Bayou, e.g. ["Fondren Rd"]
+  crossesWillowWaterhole: boolean; // that bayou has no gauge, so we warn
 };
 
 export type RouteOutcome =
@@ -202,6 +265,8 @@ export async function requestRoute(start: Place, end: Place, zones: RiskZones): 
       startInZone: names(plan.startNear),
       endInZone: names(plan.endNear),
       crossesZone: lineCrossesRings(coords, plan.rings),
+      braysCrossings: braysCrossings(coords),
+      crossesWillowWaterhole: crossesWillowWaterhole(coords),
     },
   };
 }

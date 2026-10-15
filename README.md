@@ -114,6 +114,8 @@ Start with [docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md).
 - Water levels and flood stages: NOAA National Water Prediction Service
 - Hurricane Harvey water levels: USGS Water Services
 - Rain forecast: National Weather Service (api.weather.gov)
-- Routing and geocoding: OpenRouteService
+- Routing and place search: OpenRouteService
+- House-number address search: US Census Bureau Geocoder
+- Ground heights for the destinations: USGS Elevation Point Query Service
 - Map tiles and the bayou outline: © OpenStreetMap contributors (ODbL)
 - Inter font (used only to draw the cover and icons): SIL Open Font License, see `scripts/fonts/OFL.txt`

@@ -9,9 +9,10 @@ import {
   DEMO_START,
   geocode,
   googleMapsUrl,
+  destinationsFor,
   inHouston,
-  PRESET_DESTINATIONS,
   requestRoute,
+  type Destination,
   type Place,
   type RouteOutcome,
 } from "../lib/routing";
@@ -31,6 +32,7 @@ export function RoutePanel({ zones, onChange, note }: Props) {
   const [routing, setRouting] = useState(false);
   const [outcome, setOutcome] = useState<RouteOutcome | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+  const dests = destinationsFor(start);
 
   // Tell the page (and the map) whenever something changes.
   useEffect(() => onChange({ start, end, outcome }), [start, end, outcome, onChange]);
@@ -41,6 +43,11 @@ export function RoutePanel({ zones, onChange, note }: Props) {
   function pickStart(place: Place) {
     setStart(place);
     setOutcome(null);
+    // A destination picked for the other side of the bayou may no longer be a good idea.
+    if (endChoice && endChoice !== "other") {
+      setEnd(null);
+      setEndChoice(null);
+    }
   }
 
   function pickEnd(place: Place, choice: string) {
@@ -115,19 +122,46 @@ export function RoutePanel({ zones, onChange, note }: Props) {
 
       <fieldset>
         <legend>To</legend>
+        {!dests.side && (
+          <p className="fine">Pick a start first and we'll show which way leads away from the bayou.</p>
+        )}
+        {dests.side && (
+          <p className="side-note">
+            You're on the <strong>{dests.side} side</strong> of Brays Bayou. These keep you on your
+            side, away from the water:
+          </p>
+        )}
         <div className="choices">
-          {PRESET_DESTINATIONS.map((d) => (
-            <button
+          {dests.recommended.map((d, i) => (
+            <DestinationButton
               key={d.id}
-              type="button"
-              className="choice"
-              aria-pressed={endChoice === d.id}
-              onClick={() => pickEnd(d, d.id)}
-            >
-              <span>{d.label}</span>
-              <small>{d.detail}</small>
-            </button>
+              d={d}
+              best={Boolean(dests.side) && i === 0}
+              pressed={endChoice === d.id}
+              onPick={() => pickEnd(d, d.id)}
+            />
           ))}
+        </div>
+        {dests.across.length > 0 && (
+          <>
+            <p className="side-note">
+              <strong>Across Brays Bayou</strong>: only if you must. The crossings are the first
+              places to flood.
+            </p>
+            <div className="choices">
+              {dests.across.map((d) => (
+                <DestinationButton
+                  key={d.id}
+                  d={d}
+                  best={false}
+                  pressed={endChoice === d.id}
+                  onPick={() => pickEnd(d, d.id)}
+                />
+              ))}
+            </div>
+          </>
+        )}
+        <div className="choices">
           <button
             type="button"
             className="choice"
@@ -192,9 +226,23 @@ function RouteResultView({ outcome }: { outcome: RouteOutcome }) {
   const areas = r.avoidedAreas;
   return (
     <div className="route-result route-ok">
-      <p className="route-headline">
-        {formatDriveTime(r.durationS)} · {formatMiles(r.distanceM)}
-      </p>
+      <div className="widget-grid widget-grid-3">
+        <div className="widget widget-compact">
+          <p className="widget-title">Drive</p>
+          <p className="metric metric-sm">{formatDriveTime(r.durationS)}</p>
+        </div>
+        <div className="widget widget-compact">
+          <p className="widget-title">Distance</p>
+          <p className="metric metric-sm">{formatMiles(r.distanceM)}</p>
+        </div>
+        <div className="widget widget-compact">
+          <p className="widget-title">Avoided</p>
+          <p className="metric metric-sm">
+            {areas}
+            <span className="metric-unit">{areas === 1 ? "area" : "areas"}</span>
+          </p>
+        </div>
+      </div>
       <p>
         {areas === 0
           ? "No flood-risk areas on the map right now. This is the normal fastest route."
@@ -213,6 +261,18 @@ function RouteResultView({ outcome }: { outcome: RouteOutcome }) {
           Your destination is in or next to the {r.endInZone.join(" and ")} risk{" "}
           {r.endInZone.length === 1 ? "area" : "areas"}. Pick a place
           farther from the bayou if you can.
+        </p>
+      )}
+      {r.braysCrossings.length > 0 && (
+        <p className={areas > 0 ? "callout" : undefined}>
+          This route crosses Brays Bayou at {r.braysCrossings.join(" and ")}
+          {areas > 0 ? ", outside the danger zones. Look before you cross." : "."}
+        </p>
+      )}
+      {r.crossesWillowWaterhole && (
+        <p className="callout">
+          This route crosses Willow Waterhole Bayou. It has no official gauge, so TurnAround can't
+          tell if it's flooding. Watch for water there.
         </p>
       )}
       {r.crossesZone && (
@@ -234,6 +294,30 @@ function RouteResultView({ outcome }: { outcome: RouteOutcome }) {
         go. Never drive into water: turn around, don't drown.
       </p>
     </div>
+  );
+}
+
+function DestinationButton({
+  d,
+  best,
+  pressed,
+  onPick,
+}: {
+  d: Destination;
+  best: boolean;
+  pressed: boolean;
+  onPick: () => void;
+}) {
+  return (
+    <button type="button" className="choice" aria-pressed={pressed} onClick={onPick}>
+      <span>
+        {d.label}
+        {best && <span className="best-tag">Best</span>}
+      </span>
+      <small>
+        {d.detail} · ground {d.groundFt} ft
+      </small>
+    </button>
   );
 }
 
@@ -305,6 +389,7 @@ function AddressSearch({
                 }}
               >
                 {p.label}
+                {p.note && <small className="address-note">{p.note}</small>}
               </button>
             </li>
           ))}
