@@ -14,7 +14,7 @@ const OPTIONS = Object.keys(OVERRIDE_LABELS) as Override[];
 export function TestModePanel({ gauges, overrides, onChange }: Props) {
   const active = Object.values(overrides).some((o) => o !== "live");
   return (
-    <details className="card test-panel" open={active}>
+    <details className="test-panel" open={active}>
       <summary>Test mode {active ? "(ON: pretend readings)" : ""}</summary>
       <p className="fine">
         Pretend a gauge is at a level to check zones and routing. Only you see this.

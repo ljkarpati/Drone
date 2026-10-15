@@ -53,8 +53,18 @@ export function RoutePanel({ zones, runId, onChange, onBusyChange }: Props) {
   useEffect(() => onChange({ start, end, outcome }), [start, end, outcome, onChange]);
   useEffect(() => onBusyChange?.(stage === "locating" || stage === "routing"), [stage, onBusyChange]);
 
-  const show = () =>
-    requestAnimationFrame(() => ref.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  // The trip card floats over the map; bring its top into view when something new appears.
+  const show = () => requestAnimationFrame(() => ref.current?.scrollIntoView({ block: "nearest" }));
+
+  // Remove the route and give the whole map back.
+  const clear = () => {
+    setOutcome(null);
+    setMessage(null);
+    setEditing(false);
+    setStage("idle");
+    setEnd(null);
+    setEndChoice(null);
+  };
 
   const plan = useCallback(async (from: Place, to: Place) => {
     setStage("routing");
@@ -121,14 +131,22 @@ export function RoutePanel({ zones, runId, onChange, onBusyChange }: Props) {
         </p>
       )}
       {message && <p className="trip-message">{message}</p>}
-      {stage === "done" && outcome && <TripResult outcome={outcome} start={start} end={end} />}
+      {stage === "done" && outcome && (
+        <TripResult
+          outcome={outcome}
+          start={start}
+          end={end}
+          onClear={clear}
+          onEdit={() => setEditing(!editing)}
+        />
+      )}
 
-      {!busy && (
+      {!busy && !(stage === "done" && outcome?.kind === "ok" && !editing) && (
         <button type="button" className="btn-link trip-change" onClick={() => setEditing(!editing)}>
           {editing
             ? "Hide"
             : stage === "idle" && !message
-              ? "Or plan a trip from an address"
+              ? "Plan from an address instead"
               : "Change start or destination"}
         </button>
       )}
@@ -233,15 +251,19 @@ function TripResult({
   outcome,
   start,
   end,
+  onClear,
+  onEdit,
 }: {
   outcome: RouteOutcome;
   start: Place | null;
   end: Place | null;
+  onClear: () => void;
+  onEdit: () => void;
 }) {
   if (outcome.kind === "noRoute") {
     return (
       <div className="trip-result trip-none">
-        <p className="trip-dest">No safe route out.</p>
+        <p className="trip-dest">No safe route out</p>
         <p>Every way out goes through flooded areas. Stay where you are and call 911 if you are in danger.</p>
         <a className="btn btn-danger btn-big" href="tel:911">
           Call 911
@@ -280,17 +302,25 @@ function TripResult({
 
   return (
     <div className="trip-result">
-      <p className="trip-eyebrow">Head to</p>
-      <p className="trip-dest">{destination}</p>
-      <p className="trip-meta">
-        <strong>{formatDriveTime(r.durationS)}</strong>
-        <span>{formatMiles(r.distanceM)}</span>
-        <span>
+      {/* Biggest first: how long, then where to go. */}
+      <div className="trip-top">
+        <p className="trip-eta num">{formatDriveTime(r.durationS)}</p>
+        <p className="trip-meta">
+          {formatMiles(r.distanceM)} ·{" "}
           {r.avoidedAreas === 0
             ? "no flooding on the map"
             : `avoids ${r.avoidedAreas} flood ${r.avoidedAreas === 1 ? "area" : "areas"}`}
-        </span>
-      </p>
+        </p>
+        <div className="trip-buttons">
+          <button type="button" className="btn btn-quiet" onClick={onEdit}>
+            Change
+          </button>
+          <button type="button" className="btn btn-quiet" onClick={onClear}>
+            Clear
+          </button>
+        </div>
+      </div>
+      <p className="trip-dest">Head to {destination}</p>
       {r.roads.length > 0 && <p className="trip-via">via {r.roads.slice(0, 2).join(" and ")}</p>}
       {facts.length > 0 && (
         <ul className="trip-facts">
@@ -309,9 +339,7 @@ function TripResult({
           Apple Maps
         </a>
       </div>
-      <p className="fine">
-        Apple Maps may choose other roads; Google follows this route. Never drive into water.
-      </p>
+      <p className="fine">Apple Maps may pick other roads; Google follows this route.</p>
     </div>
   );
 }

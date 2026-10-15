@@ -1,15 +1,15 @@
-// The top of the screen, styled like a weather app: one huge number (how close Brays Bayou is
-// to flooding), a condition word with its icon, and one plain sentence.
+// The status of Brays Bayou: a card that floats at the top of the map.
+// The colored stripe on its left edge is the danger level; the word next to it says the same
+// thing, so color is never the only signal.
 
+import type { CSSProperties } from "react";
 import { RISK_STYLE } from "../lib/colors";
 import { formatAgo } from "../lib/format";
 import { overallStatus, type RiskLevel } from "../lib/risk";
 import { bannerSentence, type GaugeStatus } from "../lib/status";
-import { RiskIcon } from "./RiskIcon";
 
-// The word shown next to the big number, like "Cloudy" in a weather app.
 const CONDITION: Record<RiskLevel, string> = {
-  safe: "All clear",
+  safe: "Normal",
   atRisk: "Rising",
   flooding: "Flooding",
   major: "Major flooding",
@@ -19,16 +19,15 @@ const CONDITION: Record<RiskLevel, string> = {
 type Props = {
   statuses: GaugeStatus[];
   loading?: boolean; // first download still in progress and nothing saved to show
+  testing?: boolean; // test mode is showing pretend readings
 };
 
-export function StatusBanner({ statuses, loading = false }: Props) {
+export function StatusBanner({ statuses, loading = false, testing = false }: Props) {
   if (loading) {
     return (
-      <section className="hero" role="status" aria-live="polite">
-        <p className="hero-place">Brays Bayou · Meyerland</p>
-        <p className="hero-sentence">
-          <span className="spinner" aria-hidden="true" /> Checking the bayou…
-        </p>
+      <section className="panel status-card" role="status" aria-live="polite">
+        <p className="eyebrow">Brays Bayou</p>
+        <p className="status-level">Checking…</p>
       </section>
     );
   }
@@ -36,33 +35,32 @@ export function StatusBanner({ statuses, loading = false }: Props) {
   const level = overallStatus(statuses.map((s) => s.level));
   const style = RISK_STYLE[level];
   const withReadings = statuses.filter((s) => s.reading);
-  // The big number: the gauge that is closest to flooding.
+  // How close the gauge nearest to flooding is to its flood stage.
   const percent = withReadings.length > 0 ? Math.max(...withReadings.map((s) => s.percent)) : null;
   const ages = statuses.map((s) => s.ageMin).filter((a): a is number => a !== null);
   const newest = ages.length > 0 ? Math.min(...ages) : null;
+  const sentence = bannerSentence(statuses).replace(/^All clear\. /, "");
 
   return (
-    <section className="hero" role="status" aria-live="polite">
-      <p className="hero-place">Brays Bayou · Meyerland</p>
-      <div className="hero-main">
-        <p
-          className="hero-number"
-          aria-label={percent === null ? "No reading" : `${percent} percent of the way to flood stage`}
-        >
-          {percent ?? "—"}
-          <span className="hero-unit">%</span>
-        </p>
-        <div className="hero-side">
-          <span className="hero-icon" style={{ background: style.bg, color: style.text }}>
-            <RiskIcon level={level} size={22} />
-          </span>
-          <p className="hero-condition">{CONDITION[level]}</p>
-          <p className="hero-caption">of the way to flood stage</p>
-        </div>
+    <section
+      className="panel status-card"
+      style={{ "--accent": style.bg } as CSSProperties}
+      role="status"
+      aria-live="polite"
+    >
+      <div className="status-top">
+        <p className="eyebrow">Brays Bayou{testing ? " · Test mode, simulated readings" : ""}</p>
+        {newest !== null && <p className="eyebrow">Updated {formatAgo(newest)}</p>}
       </div>
-      {/* "All clear" is already shown next to the number, so don't say it twice. */}
-      <p className="hero-sentence">{bannerSentence(statuses).replace(/^All clear\. /, "")}</p>
-      {newest !== null && <p className="hero-updated">Gauges updated {formatAgo(newest)}</p>}
+      <div className="status-main">
+        <p className="status-level">{CONDITION[level]}</p>
+        {percent !== null && (
+          <p className="status-pct">
+            <span className="num">{percent}%</span> to flood stage
+          </p>
+        )}
+      </div>
+      <p className="status-sentence">{sentence}</p>
     </section>
   );
 }

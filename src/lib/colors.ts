@@ -2,8 +2,9 @@
 // The map, the legend, the status banner and the gauge cards all read from here,
 // so a level always looks the same everywhere in the app.
 //
-// The risk colors follow the National Weather Service's own flood map convention:
-// yellow for "action", red for flooding, purple for major flooding.
+// The palette is deliberately small: amber means "at risk", crimson means flooding (darker
+// crimson for major), green means safe and marks the safe route. Everything else is gray, so
+// danger is the only thing that stands out on the map.
 //
 // Every background color is paired with a text color that passes WCAG AA contrast
 // (at least 4.5 : 1). src/lib/colors.test.ts checks this automatically.
@@ -23,47 +24,49 @@ export const RISK_STYLE: Record<RiskLevel, RiskStyle> = {
   safe: {
     label: "Safe",
     meaning: "Normal levels",
-    bg: "#1B7A3D",
-    text: "#FFFFFF",
-    outline: "#0E4A24",
+    bg: "#10B981", // safety green: also the color of a safe route
+    text: "#0B0F19",
+    outline: "#047857",
   },
   atRisk: {
     label: "At risk",
     meaning: "Bayou rising. Avoid low streets.",
-    bg: "#F2B705",
-    text: "#0B2545",
-    outline: "#7A5A00",
+    bg: "#F59E0B", // warning amber
+    text: "#0B0F19",
+    outline: "#B45309",
   },
   flooding: {
     label: "Flooding",
     meaning: "Water out of banks nearby. Do not drive here.",
-    bg: "#C42B1C",
-    text: "#FFFFFF",
-    outline: "#7A140B",
+    bg: "#EF4444", // crimson: closed
+    text: "#0B0F19", // white on this crimson is only 3.8 : 1, so we use near-black
+    outline: "#991B1B",
   },
   major: {
     label: "Major",
     meaning: "Severe flooding. Leave now if told to.",
-    bg: "#6B21A8",
+    bg: "#B91C1C", // darker crimson, so major and flooding never look the same
     text: "#FFFFFF",
-    outline: "#3B0F5E",
+    outline: "#7F1D1D",
   },
   unknown: {
     label: "Unknown",
     meaning: "No recent reading",
-    bg: "#596273",
+    bg: "#64748B",
     text: "#FFFFFF",
-    outline: "#2E343D",
+    outline: "#334155",
   },
 };
 
-// Brand colors: deep navy and clean white. Calm, not alarming.
+// Interface colors: a deep charcoal background, white text, slate for secondary text.
 export const BRAND = {
-  navy: "#0B2545",
+  navy: "#0B2545", // the app icon
   white: "#FFFFFF",
-  bayou: "#2F7FC1", // the blue line of Brays Bayou on the map
-  route: "#FFFFFF", // the safe route: thick white line on the night-style map...
-  routeCasing: "#0B2545", // ...with a navy edge so it stands out from the streets
+  background: "#0B0F19",
+  muted: "#94A3B8",
+  bayou: "#94A3B8", // Brays Bayou: a neutral line, so only danger and safety get color
+  route: "#10B981", // the safe route: safety green...
+  routeCasing: "#0B0F19", // ...with a dark edge so it stands out from the streets
 };
 
 // WCAG contrast ratio between two hex colors (1 = no contrast, 21 = black on white).

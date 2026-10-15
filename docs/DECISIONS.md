@@ -219,6 +219,20 @@ MapLibre 5 has a published critical security advisory, so we use 6.14. The libra
 map replaces them when ready (or never, on a phone without WebGL). After the first visit it is
 saved for offline use.
 
+**36e. Tactical dark utility design** (replaces the "sky" look, at the student's request). The map
+fills the whole screen. Panels float over it as dark glass (#0B0F19 at about 72% plus background
+blur) with 8 px corners: Brays Bayou status at the top; the route card, two gauge cells and Get Me
+Out at the bottom. Gauge details, rain and the map key moved into a Details sheet so they never
+cover the map. Roads and land are neutral grays; only three colors carry meaning: amber #F59E0B
+(at risk), crimson #EF4444 (flooding; a darker #B91C1C for major), green #10B981 (safe and the safe
+route). Type hierarchy: the ETA (44 px), the bayou status (30 px) and the route instruction (20 px)
+are the largest text. No decorative icons or animation; the only motion is the loading
+indicator. Two deliberate departures from the brief: (1) white text fails WCAG AA on #EF4444
+(3.8 : 1) and #10B981 (2.5 : 1), so badges and the Get Me Out button use near-black text on those
+colors; (2) the brief suggested Tailwind/shadcn, but the app already had a small plain-CSS design
+system, so the same tokens (colors, 8 px radius, blur) are CSS variables in src/styles.css instead
+of a new framework. While a route is showing, the gauge cells hide to give the map more room.
+
 **37. Tooling versions.** Vitest 5 (the 3.x line has published security advisories in its
 dependencies, and 4.x hit an npm install bug). Vite 7, React 19, react-leaflet 5, TypeScript 5.9.
 

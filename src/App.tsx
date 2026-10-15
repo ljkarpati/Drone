@@ -8,8 +8,9 @@ const About = lazy(() => import("./components/About").then((m) => ({ default: m.
 
 export function App() {
   const path = usePath();
-  const page =
-    path === "/about" ? <About /> : <Home />;
+  // The main screen is a full-screen map with its own floating panels; only About is a
+  // normal scrolling page with a header.
+  if (path !== "/about") return <Home />;
 
   return (
     <>
@@ -18,23 +19,19 @@ export function App() {
       </a>
       <header className="site-header">
         <Link href="/" className="brand" aria-label="TurnAround home">
-          <Logo size={32} />
+          <Logo size={28} />
           <span className="brand-name">TurnAround</span>
         </Link>
         <nav aria-label="Pages">
-          {path === "/about" ? (
-            <Link href="/" className="nav-link">
-              Live
-            </Link>
-          ) : (
-            <Link href="/about" className="nav-link">
-              About
-            </Link>
-          )}
+          <Link href="/" className="nav-link">
+            Back to map
+          </Link>
         </nav>
       </header>
       <main id="main" className="page">
-        <Suspense fallback={<p className="notice">Loading…</p>}>{page}</Suspense>
+        <Suspense fallback={<p className="notice">Loading…</p>}>
+          <About />
+        </Suspense>
       </main>
       <footer className="site-footer">
         <p>

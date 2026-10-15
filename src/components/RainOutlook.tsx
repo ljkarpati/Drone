@@ -15,10 +15,10 @@ export function RainOutlook({ rain }: { rain: RainState }) {
   const { outlook, loading, error, savedAt } = rain;
 
   return (
-    <section className="glass rain" aria-labelledby="rain-title">
-      <h2 id="rain-title" className="glass-title">
+    <section className="rain" aria-labelledby="rain-title">
+      <h3 id="rain-title" className="eyebrow">
         Rain forecast
-      </h2>
+      </h3>
       {!outlook && loading && <p className="widget fine">Loading the forecast…</p>}
       {!outlook && !loading && error && (
         <p className="widget">

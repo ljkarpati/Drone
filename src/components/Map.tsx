@@ -13,8 +13,6 @@ import type { RiskZones, ZoneProperties } from "../lib/risk";
 import type { Place } from "../lib/routing";
 import type { GaugeStatus } from "../lib/status";
 import { gaugeById } from "../data/gauges";
-import { Legend } from "./Legend";
-import { riskIconSvg } from "./RiskIcon";
 import { VectorBasemap } from "./VectorBasemap";
 
 // The middle of Meyerland's boundary in OpenStreetMap (relation 3726371). Brays Bayou runs
@@ -27,12 +25,16 @@ type Props = {
   route?: LonLat[] | null;
   start?: Place | null;
   end?: Place | null;
+  // Space (in pixels) covered by the floating panels at the top and bottom, so a new route is
+  // framed in the part of the map you can actually see.
+  padTop?: number;
+  padBottom?: number;
 };
 
 // Leaflet wants [lat, lon]; GeoJSON (and the rest of our app) uses [lon, lat].
 const toLatLng = ([lon, lat]: LonLat): [number, number] => [lat, lon];
 
-export function MapView({ statuses, zones, route, start, end }: Props) {
+export function MapView({ statuses, zones, route, start, end, padTop = 0, padBottom = 0 }: Props) {
   const [sharp, setSharp] = useState(false);
   const onSharp = useCallback(() => setSharp(true), []);
   return (
@@ -40,7 +42,6 @@ export function MapView({ statuses, zones, route, start, end }: Props) {
       <MapContainer
         center={MEYERLAND_CENTER}
         zoom={14}
-        scrollWheelZoom={false}
         attributionControl={false}
         className="map"
         aria-label="Map of Meyerland showing Brays Bayou, flood risk zones and your route"
@@ -59,13 +60,13 @@ export function MapView({ statuses, zones, route, start, end }: Props) {
         <AttributionControl prefix={false} />
         {/* The zones pane is see-through as a whole. Inside it, each zone is drawn solid, so
             overlapping circles blend into one smooth strip instead of a pile of darker rings. */}
-        <Pane name="zones" style={{ zIndex: 410, opacity: 0.5 }}>
+        <Pane name="zones" style={{ zIndex: 410, opacity: 0.45 }}>
           <ZoneLayers zones={zones} />
         </Pane>
         <Pane name="bayou" style={{ zIndex: 420 }}>
           <Polyline
             positions={BRAYS_BAYOU.map(toLatLng)}
-            pathOptions={{ color: BRAND.bayou, weight: 4, opacity: 0.95 }}
+            pathOptions={{ color: BRAND.bayou, weight: 3, opacity: 0.9 }}
             interactive={false}
           />
         </Pane>
@@ -74,12 +75,12 @@ export function MapView({ statuses, zones, route, start, end }: Props) {
             <>
               <Polyline
                 positions={route.map(toLatLng)}
-                pathOptions={{ color: BRAND.routeCasing, weight: 12, opacity: 1 }}
+                pathOptions={{ color: BRAND.routeCasing, weight: 11, opacity: 1 }}
                 interactive={false}
               />
               <Polyline
                 positions={route.map(toLatLng)}
-                pathOptions={{ color: BRAND.route, weight: 7, opacity: 1 }}
+                pathOptions={{ color: BRAND.route, weight: 6, opacity: 1 }}
                 interactive={false}
               />
             </>
@@ -90,9 +91,8 @@ export function MapView({ statuses, zones, route, start, end }: Props) {
         ))}
         {start && <PlaceMarker place={start} text="Start" />}
         {end && <PlaceMarker place={end} text="End" />}
-        <FitToRoute route={route} />
+        <FitToRoute route={route} padTop={padTop} padBottom={padBottom} />
       </MapContainer>
-      <Legend />
     </div>
   );
 }
@@ -152,19 +152,19 @@ function ZoneLayers({ zones }: { zones: RiskZones }) {
 function GaugeMarker({ status }: { status: GaugeStatus }) {
   const { gauge, level, reading, ageMin, lastKnown } = status;
   const style = RISK_STYLE[level];
+  const label = `${gauge.shortName}${reading ? ` · ${reading.stageFt.toFixed(1)} ft` : ""}`;
   const icon = useMemo(
     () =>
       L.divIcon({
         className: "gauge-pin-wrap",
         html:
-          `<div class="gauge-pin" style="background:${style.bg};color:${style.text};border-color:${style.outline}">` +
-          `${riskIconSvg(level, 22)}</div>` +
-          `<div class="gauge-pin-label">${gauge.shortName}</div>`,
-        iconSize: [44, 44],
-        iconAnchor: [22, 22],
-        popupAnchor: [0, -22],
+          `<span class="gauge-dot" style="background:${style.bg}"></span>` +
+          `<span class="gauge-pin-label">${label}</span>`,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+        popupAnchor: [0, -10],
       }),
-    [level, style, gauge.shortName],
+    [style.bg, label],
   );
   return (
     <Marker
@@ -200,12 +200,24 @@ function PlaceMarker({ place, text }: { place: Place; text: string }) {
   return <Marker position={[place.lat, place.lon]} icon={icon} title={`${text}: ${place.label}`} />;
 }
 
-/** Zooms the map to show the whole route whenever a new route arrives. */
-function FitToRoute({ route }: { route?: LonLat[] | null }) {
+/** Zooms the map to show the whole route, in the part not covered by the floating panels. */
+function FitToRoute({
+  route,
+  padTop,
+  padBottom,
+}: {
+  route?: LonLat[] | null;
+  padTop: number;
+  padBottom: number;
+}) {
   const map = useMap();
   useEffect(() => {
     if (!route || route.length < 2) return;
-    map.fitBounds(L.latLngBounds(route.map(toLatLng)), { padding: [36, 36] });
+    map.fitBounds(L.latLngBounds(route.map(toLatLng)), {
+      paddingTopLeft: [24, padTop + 16],
+      paddingBottomRight: [24, padBottom + 16],
+    });
+    // Only when a new route arrives, not every time a panel changes size.
   }, [map, route]);
   return null;
 }
