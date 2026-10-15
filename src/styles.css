@@ -804,12 +804,12 @@ select option {
   min-height: 320px;
   max-height: 560px;
   width: 100%;
-  background: #1b2433;
+  background: #05080f;
 }
 
-/* Night-style streets so the map sits naturally on the sky. Only the street tiles are
-   darkened; zones, the bayou and the route keep their true colors on top. */
-.leaflet-tile-pane {
+/* While the sharp map loads, the picture tiles are darkened to match. Only those tiles are
+   filtered; zones, the bayou and the route keep their true colors on top. */
+.osm-raster {
   filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.88) saturate(0.6);
 }
 
@@ -893,7 +893,7 @@ select option {
 .legend {
   position: absolute;
   left: 10px;
-  bottom: 22px;
+  bottom: 40px;
   z-index: 1000;
   max-width: calc(100% - 20px);
   color: var(--text);

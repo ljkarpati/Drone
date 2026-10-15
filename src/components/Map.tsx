@@ -1,10 +1,10 @@
-// The map: OpenStreetMap streets, the bayou, the danger zones, the gauges and your route.
-// Drawn with Leaflet (through react-leaflet).
+// The map: streets, the bayou, the danger zones, the gauges and your route.
+// Drawn with Leaflet (through react-leaflet); the streets come from VectorBasemap.
 
-import { Fragment, useEffect, useMemo } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import L from "leaflet";
 import type { FeatureCollection, Polygon } from "geojson";
-import { GeoJSON, MapContainer, Marker, Pane, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
+import { AttributionControl, GeoJSON, MapContainer, Marker, Pane, Polyline, Popup, TileLayer, useMap } from "react-leaflet";
 import { BRAYS_BAYOU } from "../data/brays-bayou";
 import { BRAND, RISK_STYLE } from "../lib/colors";
 import { formatAgo } from "../lib/format";
@@ -15,6 +15,7 @@ import type { GaugeStatus } from "../lib/status";
 import { gaugeById } from "../data/gauges";
 import { Legend } from "./Legend";
 import { riskIconSvg } from "./RiskIcon";
+import { VectorBasemap } from "./VectorBasemap";
 
 // The middle of Meyerland's boundary in OpenStreetMap (relation 3726371). Brays Bayou runs
 // right through it, so the neighborhood on both banks fits on a phone screen at zoom 14.
@@ -32,21 +33,30 @@ type Props = {
 const toLatLng = ([lon, lat]: LonLat): [number, number] => [lat, lon];
 
 export function MapView({ statuses, zones, route, start, end }: Props) {
+  const [sharp, setSharp] = useState(false);
+  const onSharp = useCallback(() => setSharp(true), []);
   return (
     <div className="map-wrap">
       <MapContainer
         center={MEYERLAND_CENTER}
         zoom={14}
         scrollWheelZoom={false}
+        attributionControl={false}
         className="map"
         aria-label="Map of Meyerland showing Brays Bayou, flood risk zones and your route"
       >
-        <TileLayer
-          url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          crossOrigin="anonymous"
-          maxZoom={19}
-        />
+        {/* Picture tiles show right away; the sharp vector map replaces them once it loads. */}
+        {!sharp && (
+          <TileLayer
+            url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            crossOrigin="anonymous"
+            maxZoom={19}
+            className="osm-raster"
+          />
+        )}
+        <VectorBasemap onReady={onSharp} />
+        <AttributionControl prefix={false} />
         {/* The zones pane is see-through as a whole. Inside it, each zone is drawn solid, so
             overlapping circles blend into one smooth strip instead of a pile of darker rings. */}
         <Pane name="zones" style={{ zIndex: 410, opacity: 0.5 }}>
@@ -99,8 +109,26 @@ function ZoneLayers({ zones }: { zones: RiskZones }) {
     return [...byKey.entries()];
   }, [zones]);
 
+  // All outlines first, then all fills on top: the fills hide every inner edge, so even where
+  // two gauges' stretches meet, the strip reads as one shape with one outline around it.
+  // (react-leaflet's GeoJSON doesn't redraw when its data changes, so each key includes the
+  // feature count; a new key means a fresh layer.)
+  // When any zone changes, redraw them all (new key), so the drawing order stays right. If we
+  // only added the new ones, they'd be stacked on top of the old fills.
+  const signature = groups.map(([key, c]) => `${key}:${c.features.length}`).join("|");
   return (
-    <>
+    <Fragment key={signature}>
+      {groups.map(([key, collection]) => {
+        const style = RISK_STYLE[collection.features[0].properties.level];
+        return (
+          <GeoJSON
+            key={`outline-${key}-${collection.features.length}`}
+            data={collection}
+            style={{ color: style.outline, weight: 5, opacity: 1, fill: false }}
+            interactive={false}
+          />
+        );
+      })}
       {groups.map(([key, collection]) => {
         const { level, gaugeId, lastKnown } = collection.features[0].properties;
         const style = RISK_STYLE[level];
@@ -108,27 +136,16 @@ function ZoneLayers({ zones }: { zones: RiskZones }) {
         const popup =
           `<strong>${style.label}</strong> along Brays Bayou near ${gauge?.shortName ?? gaugeId}` +
           `${lastKnown ? " (last known reading)" : ""}.<br>${style.meaning}`;
-        // react-leaflet's GeoJSON doesn't redraw when its data changes, so the key includes
-        // everything that matters; a new key means a fresh layer.
-        const layerKey = `${key}-${collection.features.length}`;
         return (
-          <Fragment key={layerKey}>
-            {/* 1. a thick dark outline around every circle... */}
-            <GeoJSON
-              data={collection}
-              style={{ color: style.outline, weight: 5, opacity: 1, fill: false }}
-              interactive={false}
-            />
-            {/* 2. ...then the solid fill on top, which hides the inner outlines. */}
-            <GeoJSON
-              data={collection}
-              style={{ stroke: false, fillColor: style.bg, fillOpacity: 1 }}
-              onEachFeature={(_, layer) => layer.bindPopup(popup)}
-            />
-          </Fragment>
+          <GeoJSON
+            key={`fill-${key}-${collection.features.length}`}
+            data={collection}
+            style={{ stroke: false, fillColor: style.bg, fillOpacity: 1 }}
+            onEachFeature={(_, layer) => layer.bindPopup(popup)}
+          />
         );
       })}
-    </>
+    </Fragment>
   );
 }
 

@@ -61,6 +61,10 @@ export default defineConfig(({ mode }) => {
   if (env.ORS_API_KEY && !process.env.ORS_API_KEY) process.env.ORS_API_KEY = env.ORS_API_KEY;
 
   return {
+    build: {
+      // The map library is about 1 MB on its own. It loads in the background, after the page.
+      chunkSizeWarningLimit: 1200,
+    },
     plugins: [
       react(),
       localApi(),
@@ -90,10 +94,21 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           // The app shell (HTML, JS, CSS, icons, Harvey data) is saved for offline use.
-          globPatterns: ["**/*.{js,css,html,svg,png,webmanifest}"],
+          globPatterns: ["**/*.{js,mjs,css,html,svg,png,webmanifest}"],
+          maximumFileSizeToCacheInBytes: 3 * 1024 * 1024, // the map library is about 1 MB
           navigateFallback: "/index.html",
           navigateFallbackDenylist: [/^\/api\//],
           runtimeCaching: [
+            {
+              // Sharp-map data (street shapes, fonts, icons) you've already looked at.
+              urlPattern: /^https:\/\/tiles\.openfreemap\.org\/.*/,
+              handler: "CacheFirst",
+              options: {
+                cacheName: "openfreemap",
+                expiration: { maxEntries: 600, maxAgeSeconds: 7 * 24 * 60 * 60 },
+                cacheableResponse: { statuses: [200] },
+              },
+            },
             {
               // Map tiles you've already looked at stay available with no signal.
               urlPattern: /^https:\/\/tile\.openstreetmap\.org\/.*/,

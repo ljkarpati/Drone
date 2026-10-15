@@ -208,6 +208,17 @@ always dark enough for white text (at least 6 : 1 contrast at its brightest poin
 phone's dark mode it gets a little deeper. The map uses night-style streets to match, and the
 route line is white with a navy edge so it stands out on them.
 
+**36d. Sharp vector map.** OpenStreetMap's standard tiles are 256-pixel pictures, so on an
+iPhone's 3x screen each map pixel is stretched about 3 times, and darkening them with a CSS filter
+blurred them further. The map now draws streets and labels as shapes on the phone itself (MapLibre
+GL with OpenFreeMap's free dark style, no key), so it is sharp at any zoom on any screen. We tuned
+the style's colors: near-black for OLED screens, blue water, and street names bright enough to
+read while driving. CARTO's dark tiles were the first choice, but they now require an API key.
+MapLibre 5 has a published critical security advisory, so we use 6.14. The library is about
+450 KB compressed, so it loads in the background: the old picture tiles show first, and the sharp
+map replaces them when ready (or never, on a phone without WebGL). After the first visit it is
+saved for offline use.
+
 **37. Tooling versions.** Vitest 5 (the 3.x line has published security advisories in its
 dependencies, and 4.x hit an npm install bug). Vite 7, React 19, react-leaflet 5, TypeScript 5.9.
 
