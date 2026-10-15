@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800">
+<rect width="600" height="800" fill="#0B2545"/>
+<g transform="translate(40 44) scale(1.1)">
+  <rect width="64" height="64" rx="14" fill="#13345F"/>
+  <path d="M41 38V23a9 9 0 0 0-18 0v10" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+  <path d="M15 31h16l-8 10z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M9 51q5.5-5 11 0t11 0 11 0 11 0" fill="none" stroke="#7CC4FA" stroke-width="4" stroke-linecap="round"/>
+</g>
+
+<defs>
+  <clipPath id="card"><rect x="40" y="300" width="520" height="380" rx="26"/></clipPath>
+</defs>
+<g clip-path="url(#card)">
+  <rect x="40" y="300" width="520" height="380" fill="#EAF0F6"/>
+  <g stroke="#FFFFFF" stroke-width="7"><line x1="70" y1="300" x2="70" y2="680"/><line x1="122" y1="300" x2="122" y2="680"/><line x1="174" y1="300" x2="174" y2="680"/><line x1="226" y1="300" x2="226" y2="680"/><line x1="278" y1="300" x2="278" y2="680"/><line x1="330" y1="300" x2="330" y2="680"/><line x1="382" y1="300" x2="382" y2="680"/><line x1="434" y1="300" x2="434" y2="680"/><line x1="486" y1="300" x2="486" y2="680"/><line x1="538" y1="300" x2="538" y2="680"/><line x1="40" y1="326" x2="560" y2="326"/><line x1="40" y1="378" x2="560" y2="378"/><line x1="40" y1="430" x2="560" y2="430"/><line x1="40" y1="482" x2="560" y2="482"/><line x1="40" y1="534" x2="560" y2="534"/><line x1="40" y1="586" x2="560" y2="586"/><line x1="40" y1="638" x2="560" y2="638"/></g>
+  <g stroke="#F6EDC8" stroke-width="14">
+  <line x1="330" y1="300" x2="330" y2="680"/>
+  <line x1="40" y1="378" x2="560" y2="378"/>
+</g>
+  <path d="M20 556 C 100 520, 150 600, 230 556 S 360 470, 440 482 S 540 480, 590 440" fill="none" stroke="#2F7FC1" stroke-width="16" stroke-linecap="round"/>
+  <g fill="#C42B1C" fill-opacity="0.6" stroke="#7A140B" stroke-width="4">
+  <ellipse cx="165" cy="560" rx="80" ry="48" transform="rotate(-8 165 560)"/>
+  <ellipse cx="440" cy="482" rx="80" ry="48" transform="rotate(-10 440 482)"/>
+</g>
+  
+  <path d="M100 638 H 278 V 378 H 520" fill="none" stroke="#FFFFFF" stroke-width="22" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M100 638 H 278 V 378 H 520" fill="none" stroke="#0B2545" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+  <path d="M514 352 L 556 378 L 514 404 Z" fill="#0B2545" stroke="#FFFFFF" stroke-width="5" stroke-linejoin="round"/>
+  <circle cx="100" cy="638" r="15" fill="#0B2545" stroke="#FFFFFF" stroke-width="6"/>
+</g>
+
+<g font-family="Inter">
+  <text x="40" y="178" font-size="78" font-weight="800" fill="#FFFFFF" letter-spacing="-1.5">TurnAround</text>
+  <text x="40" y="224" font-size="28" font-weight="400" fill="#D6E4F5">Get out of Meyerland without</text>
+  <text x="40" y="260" font-size="28" font-weight="400" fill="#D6E4F5">driving into water.</text>
+  <text x="300" y="720" font-size="20" font-weight="700" fill="#FFFFFF" text-anchor="middle">Live Brays Bayou levels · Flood-safe routing</text>
+  <text x="300" y="750" font-size="20" font-weight="700" fill="#FFFFFF" text-anchor="middle">Tested on Hurricane Harvey</text>
+</g>
+</svg>
